@@ -98,6 +98,9 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 
 14. The gyro data from different axes have the same value. It is the fault of the sensor itself. But the 3d gyro data, or angle data, are pretty necessary to transform the acc data from the body frame to the global frame.
 
+**The latest model training results are as follows:**
+![TraningResults]()
+
 **Next Steps:**
 1. try to reduce offset in grf data to make them more accurate, so we expect that the model can learn some infor from the accurate grf.
 2. try to confirm the frame that the acc data are represented in, body-based or world-based.
