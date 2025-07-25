@@ -120,3 +120,7 @@ please see the matlab code version at 23-Jul-2025.
 2. It's hard to estimate shoe imu 3D orientation. Even though I can build a foot coordinate frame based on three markers, MTP1, MTP5, as well as Heel, the relation of the marker-based frame with the shoe imu frame cannot be known. I tried to build the marker-baesd frame (x-axis: MTP1-to-MTP5; z-axis: norminal vector of the plane that is constructed using the vector#1 (heel marker to the middle point of MTP1-MTP5 and the vector#2 x-axis; y: cross vector of x-axis and z-axis), and calculate the relative orientation angle between this frame and the vicon world frame. And then, transform this relative angle to the IMU original frame, as depicted below.
 
 ![Definition of IMU Base Frame and Vicon World Frame](images/Coordinate_Frame.png)
+
+3. Will the shoe IMU be reset at each beginning?
+
+4. Using abosulate or relative grf values for training don't have a better model result than using logic grf values.
