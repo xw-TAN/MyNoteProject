@@ -1,6 +1,6 @@
 % Model Training
 clearvars -except S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 
-% clc
+clc
 
 subjects = {'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'S10'};
 leg_side = ['both']; % use this as default if data is missing
@@ -8,7 +8,8 @@ leg_side = ['both']; % use this as default if data is missing
 subject_weights     = [59.1,59.7,84.1,87.9,70.4,72.8,72.2,89.9,57.4,77.3]; % [kg]
 subject_shoe_size   = [42, 40, 42, 42, 42, 40, 40, 42, 40, 42]; % [EU Size]
 subject_shoe_size_m = (subject_shoe_size + 10)./200; % [m]
-% load S1_S10_New.mat;
+
+% load S1_S10_AddedInfo.mat;
 
 load butterworth_3rd_FS100Hz_FC15Hz.mat; % butterworth filter, 3rd order, fs 100Hz, fc 15Hz
 
@@ -37,10 +38,10 @@ max_shoe    =43; % [EU Size]
 max_shoe_mm =0.26; % [m]
 
 
-%% Train NN to inclination
+%% generate dataset
 window=60; % approximately one cycle (data window length)
 
-step_between_points=window/6;   % sliding window
+step_between_points=window/10;   % sliding window
 x_train =[]; % for model training
 y_train =[];
 x_test  =[]; % for model validation after each epoch
@@ -56,7 +57,7 @@ train_test_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10]; % first 80% for traning and 
 
 
 % ↓ loop each subject
-for i=total_subject 
+for i=total_subject
     % ↓ get all fieldnames under 'ShokacData'
     experiments=fieldnames(results.(subjects{i}).ShokacData);
 
@@ -67,12 +68,12 @@ for i=total_subject
         % ↓ get speed value [m/s]
         speed=str2num(strrep(experiment_name(strfind(experiment_name,'p')+1:strfind(experiment_name,'p')+3),'x','.'));
         % ↓ get incline angle [deg]
-        inc=str2num(strrep(experiment_name(strfind(experiment_name,'n')+1:end),'_','-'));
+        inc=sscanf(strrep(experiment_name(strfind(experiment_name,'n')+1:end),'_','-'), '%f');
 
-        % temporarily negect toe clearance with inclination as the accuracy is not confirmed
-        if inc ~= 0 
-            continue;
-        end
+        % temporarily negect toe clearance collected with non-zero treadmill inclination
+        % if inc ~= 0 
+        %     continue;
+        % end
 
         % ↓ get all data of this condition under 'ShokacData'
         experiment_data=results.(subjects{i}).ShokacData.(experiment_name);
@@ -88,6 +89,31 @@ for i=total_subject
         % ↓ loop each data window with a moving step of 'step_between_points'
         for k = start_entry:step_between_points:last_entry
 
+            % ↓ get synchronized vicon data with the shoe
+            eq_vicon_time = experiment_data.time(k:k+window) -...
+                            experiment_data.time(1) - experiment_data.time_diff;
+            
+            % ↓ in case the shoe collection time longer than the vicon
+            if max(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps) < max(eq_vicon_time)
+                break;
+            end
+
+            % ↓ interpolation for data alignment
+            tc = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps,...
+                         results.(subjects{i}).MarkerData.([experiment_name '_Processed']).toe_clearance_l,...
+                         eq_vicon_time);
+
+            % ↓ output/goal (toe distance against the ground) [mm]
+            tc_f = filtfilt(SOS, G, tc);
+            y_set = {tc_f'};
+
+
+            % ↓ 3D orientation angle estimated using Marker data
+            eulerAgl = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps,...
+                               results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.EulerAngles_l,...
+                               eq_vicon_time);
+
+
             % ↓ create a window of input data (only left)
             x_set = {[  (experiment_data.time(k:k+window,1)-experiment_data.time(k,1))';...
 
@@ -95,13 +121,10 @@ for i=total_subject
                         % (experiment_data.little_l(k:k+window, 2:7)  ./max_little)';...
                         % (experiment_data.heel_l(k:k+window,   2:7)  ./max_heel)';...
 
+                        % logic grf values result in better accuracy
                         (experiment_data.thumb_l(k:k+window,  2:7) > 0.5)';...
                         (experiment_data.little_l(k:k+window, 2:7) > 0.5)';...
                         (experiment_data.heel_l(k:k+window,   2:7) > 0.5)';...
-
-                        % (experiment_data.thumb_l(k:k+window,  4) > 0.5)';...
-                        % (experiment_data.little_l(k:k+window, 4) > 0.5)';...
-                        % (experiment_data.heel_l(k:k+window,   4) > 0.5)';...
 
                         % (experiment_data.accel_l(k:k+window, 1:3)  ./max_accel)';...
                         % (experiment_data.accel_l(k:k+window, 1:3))';...
@@ -113,34 +136,25 @@ for i=total_subject
                         % (inc*ones(length(k:k+window),1)/max_inc)';...
                         (inc*ones(length(k:k+window),1))';...
 
+                        eulerAgl';...
+
                         % (subject_weights(i)*ones(length(k:k+window),1) ./max_weight)';...
                         % (subject_shoe_size(i)*ones(length(k:k+window),1) ./max_shoe)';...
                         (subject_shoe_size_m(i)*ones(length(k:k+window),1))',                      
                         % (experiment_data.phase_l(k:k+window, 1))'
                     ]};
 
-            % ↓ get synchronized vicon data with the shoe
-            eq_vicon_time = experiment_data.time(k:k+window) -...
-                            experiment_data.time(1) - experiment_data.time_diff;
 
-            % ↓ interpolation for data alignment
-            tc = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps,...
-                         results.(subjects{i}).MarkerData.([experiment_name '_Processed']).toe_clearance_l,...
-                         eq_vicon_time);
-
-            % ↓ output/goal (toe distance against the ground) [mm]
-            tc_f = filtfilt(SOS, G, tc);
-            y_set = {tc_f'};
-
-            if ismember(i, train_test_subjects)
+            % fill the dataset 
+            if ismember(i, train_test_subjects) % train dataset
                 if k < start_entry+(last_entry-start_entry)*0.8
                     x_train = [x_train; x_set];
                     y_train = [y_train; y_set];
-                else
+                else % test dataset used after each epoch
                     x_test = [x_test; x_set];
                     y_test = [y_test; y_set];
                 end
-            elseif ismember(i, val_subjects)
+            elseif ismember(i, val_subjects) % validation dataset used finally to test the model
                 x_val = [x_val; x_set];
                 y_val = [y_val; y_set];
             end
@@ -154,7 +168,7 @@ for i=total_subject
 end
 
 
-% ↓ remove nan elements
+% ↓ remove NaN elements, which may affects the model training
 emptyIdx = false(numel(y_train), 1);
 for i = 1:numel(y_train)
     yi = y_train{i};
@@ -177,7 +191,7 @@ end
 y_train(emptyIdx) = [];
 x_train(emptyIdx) = [];
 
-% ↓ remove nan elements
+% ↓ remove NaN elements
 emptyIdx = false(numel(y_test),1);
 for i = 1:numel(y_test)
     yi = y_test{i};          
@@ -200,7 +214,7 @@ end
 y_test(emptyIdx) = [];
 x_test(emptyIdx) = [];
 
-% ↓ remove nan elements
+% ↓ remove NaN elements
 emptyIdx = false(numel(y_val),1);
 for i = 1:numel(y_val)
     yi = y_val{i};          
@@ -231,14 +245,15 @@ y_test  = cellfun(@(v) v * scale_y, y_test,  'UniformOutput', false);
 y_val   = cellfun(@(v) v * scale_y, y_val,   'UniformOutput', false);
 
 
+
 %% LSTMs
 
-% ↓ feature or dimension numbers of each frame of input data 
+% ↓ feature dimension of each frame of input data 
 numFeatures = size(x_train{1}, 1);
 % ↓ two hidden layers
 numHiddenUnits1 = numFeatures*6;
 numHiddenUnits2 = numFeatures*3;
-% ↓ feature or dimension numbers of each frame of output data 
+% ↓ feature dimension of each frame of output data 
 numResponses = size(y_train{1}, 1); 
 % ↓ para initialization
 dropoutLayer1=0.2;
@@ -252,7 +267,7 @@ mini_batch_size=128;
 
 if dropoutLayer1>0
     % layers = [  sequenceInputLayer(numFeatures) % input layer (feature dimensions)
-    %             lstmLayer(numHiddenUnits1, 'OutputMode', 'sequence')  % 1st layer ('sequence' means it output states at each time point, not at the last)
+    %             lstmLayer(numHiddenUnits1, 'OutputMode', 'sequence')  % 1st layer
     %             fullyConnectedLayer(64)
     %             batchNormalizationLayer
     %             dropoutLayer(dropoutLayer1)
@@ -262,20 +277,20 @@ if dropoutLayer1>0
     %             regressionLayer
     %          ];
     
-        layers = [  sequenceInputLayer(numFeatures) % input layer (feature dimensions)
-                lstmLayer(numFeatures*5, 'OutputMode', 'sequence')  % 1st layer ('sequence' means it output states at each time point, not at the last)
+        layers = [  sequenceInputLayer(numFeatures) % input layer
+                lstmLayer(numFeatures*5, 'OutputMode', 'sequence')  % 1st layer
                 dropoutLayer(dropoutLayer1)
                  
-                lstmLayer(numFeatures*4, 'OutputMode', 'sequence')  % 1st layer ('sequence' means it output states at each time point, not at the last)
+                lstmLayer(numFeatures*4, 'OutputMode', 'sequence')  % 2nd layer
                 batchNormalizationLayer
                 dropoutLayer(dropoutLayer1)
 
-                lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 2nd layer
-                fullyConnectedLayer(64) % output layer, feature dimension
+                lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 3rd layer
+                fullyConnectedLayer(64)
                 batchNormalizationLayer
                 dropoutLayer(dropoutLayer1)
 
-                fullyConnectedLayer(numResponses) % output layer, feature dimension
+                fullyConnectedLayer(numResponses) % output layer
                 regressionLayer
              ];
 else % a simple one
@@ -287,7 +302,7 @@ end
 
 options = trainingOptions('adam',...
                           'ValidationData',{x_test, y_test},...
-                          'ValidationPatience', 5,... % times for end without changes
+                          'ValidationPatience', 10,... % times for end without changes
                           'MiniBatchSize', mini_batch_size,... % sample batch size for each training
                           'MaxEpochs', NEpoch, ... % max epoch number
                           'InitialLearnRate', LearningRate, ... % initial learn rate
@@ -304,25 +319,75 @@ options = trainingOptions('adam',...
 
 
 
-%% calculate RMSE
+%% calculate RMSE, R2, Bias, 95%CI
 
-% scale back
+% scale output back
 y_true_train = cellfun(@(v) v ./ scale_y, y_train, 'UniformOutput', false);
 y_pred_train = cellfun(@(v) v ./ scale_y, predict(net, x_train), 'UniformOutput', false);
 
 y_true_val = cellfun(@(v) v ./ scale_y, y_val, 'UniformOutput', false);
 y_pred_val = cellfun(@(v) v ./ scale_y, predict(net, x_val), 'UniformOutput', false);
 
-% calculate RMSE
+% [TRAIN DATASET] calculate RMSE
 train_mse  = cellfun(@(y_true, y_pred) mean((y_true - y_pred).^2, 'all'), y_true_train, y_pred_train);
 train_rmse = sqrt(mean(train_mse));
 fprintf('Train RMSE = %.4f mm\n', train_rmse);
 
+% [TRAIN DATASET] calculate R2, Bias, and 95%CI
+all_true = cell2mat(y_true_train(:));
+all_pred = cell2mat(y_pred_train(:));
+
+y_true_flat = all_true(:);
+y_pred_flat = all_pred(:);
+
+SS_res = sum((y_true_flat - y_pred_flat).^2);
+SS_tot = sum((y_true_flat - mean(y_true_flat)).^2);
+
+R2 = 1 - SS_res / SS_tot;
+
+diffs = all_pred - all_true;
+diffs_flat = diffs(:); 
+
+bias = mean(diffs_flat);
+std_dev = std(diffs_flat);
+LoA_upper = bias + 1.96 * std_dev;
+LoA_lower = bias - 1.96 * std_dev;
+fprintf('Train R2 = %.4f mm\n', R2);
+fprintf('Train Bias = %.2f mm\n', bias);
+fprintf('Train 95%CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+
+
+
+% [VALIDATION DATASET] calculate RMSE
 val_mse  = cellfun(@(y_true, y_pred) mean((y_true - y_pred).^2, 'all'), y_true_val, y_pred_val);
 val_rmse = sqrt(mean(val_mse));
 fprintf('Validation RMSE = %.4f mm\n', val_rmse);
 
-%% plot
+% [VALIDATION DATASET] calculate R2, Bias, and 95%CI
+all_true = cell2mat(y_true_val(:));
+all_pred = cell2mat(y_pred_val(:));
+
+y_true_flat = all_true(:);
+y_pred_flat = all_pred(:);
+
+SS_res = sum((y_true_flat - y_pred_flat).^2);              % Residual sum of squares
+SS_tot = sum((y_true_flat - mean(y_true_flat)).^2);        % Total sum of squares
+
+R2 = 1 - SS_res / SS_tot;
+
+diffs = all_pred - all_true;
+diffs_flat = diffs(:); 
+
+bias = mean(diffs_flat);
+std_dev = std(diffs_flat);
+LoA_upper = bias + 1.96 * std_dev;
+LoA_lower = bias - 1.96 * std_dev;
+fprintf('Validation R2 = %.4f mm\n', R2);
+fprintf('Validation Bias = %.2f mm\n', bias);
+fprintf('Validation 95%CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+
+
+%% plot figures
 fontsize    = 15;
 linewidth   = 1.5;
 blue_colour     = [0.2200 0.6447 0.8410];
@@ -330,7 +395,7 @@ orange_colour   = [0.8500 0.3250 0.0980];
 yellow_colour   = [0.9290 0.6940 0.1250];
 
 
-%% test the train data
+%% train dataset
 yy_true_train=[];
 for i = 1:length(y_true_train)
     data = y_true_train{i};
@@ -357,16 +422,21 @@ maxVal = max( [yy_true_train, yy_pred_train] );
 minVal = minVal-abs(maxVal- minVal)*0.1;
 maxVal = maxVal+abs(maxVal- minVal)*0.1;
 
-figure; hold on; xlabel('yy_true_train (mm)', 'Interpreter', 'none'); ylabel('yy_pred_train (mm)', 'Interpreter', 'none');
+figure; hold on; 
+xlabel('yy_true_train (mm)', 'Interpreter', 'none'); 
+ylabel('yy_pred_train (mm)', 'Interpreter', 'none');
 plot(minVal:maxVal, minVal:maxVal, '--', 'color', 'black', 'LineWidth', 3); % reference line
 plot(yy_true_train, yy_pred_train, 'o', 'MarkerEdgeColor', blue_colour);
 
-figure; hold on; xlabel('points', 'Interpreter', 'none'); ylabel('yy_true_train & yy_pred_train (mm)', 'Interpreter', 'none');
+figure; hold on; 
+xlabel('points', 'Interpreter', 'none'); 
+ylabel('yy_true_train & yy_pred_train (mm)', 'Interpreter', 'none');
 plot(1:length(yy_true_train), yy_true_train, 'Color', blue_colour, 'LineWidth', linewidth);
 plot(1:length(yy_pred_train), yy_pred_train, '-.', 'Color', orange_colour, 'LineWidth', linewidth);
 legend('yy_true_train', 'yy_pred_train', 'Interpreter', 'none');
 
-%% test the validation data
+
+%% validation dataset
 yy_true_val=[];
 for i = 1:length(y_true_val)
     data = y_true_val{i};
@@ -392,11 +462,16 @@ maxVal = max( [yy_true_val, yy_pred_val] );
 minVal = minVal-abs(maxVal- minVal)*0.1;
 maxVal = maxVal+abs(maxVal- minVal)*0.1;
 
-figure; hold on; xlabel('yy_true_val (mm)', 'Interpreter', 'none'); ylabel('yy_pred_val (mm)', 'Interpreter', 'none');
+figure; hold on; 
+xlabel('yy_true_val (mm)', 'Interpreter', 'none'); 
+ylabel('yy_pred_val (mm)', 'Interpreter', 'none');
 plot(minVal:maxVal, minVal:maxVal, '--', 'color', 'black', 'LineWidth', 3); % reference line
 plot(yy_true_val, yy_pred_val, 'o', 'MarkerEdgeColor', blue_colour);
 
-figure; hold on; xlabel('points', 'Interpreter', 'none'); ylabel('yy_true_val & yy_pred_val (mm)', 'Interpreter', 'none');
+figure; hold on; 
+xlabel('points', 'Interpreter', 'none'); 
+ylabel('yy_true_val & yy_pred_val (mm)', 'Interpreter', 'none');
 plot(1:length(yy_true_val), yy_true_val, 'Color', blue_colour, 'LineWidth', linewidth);
 plot(1:length(yy_pred_val), yy_pred_val, '-.', 'Color', orange_colour, 'LineWidth', linewidth);
 legend('yy_true_val', 'yy_pred_val', 'Interpreter', 'none');
+
