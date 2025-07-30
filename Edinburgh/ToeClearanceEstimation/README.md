@@ -112,7 +112,7 @@ please see the matlab code version at 23-Jul-2025.
 
 
 
-## to latest
+## to 29-Jul-2025
 1. Cannot confirm the acc coordinate system from acc measurements. Just look the gravity component during the first several seconds. In different inclinations, there are actually different baesline value in x and y axes acc measurements, but in z axis, there isn't much diffrences, which doesn't make sense. If as expected, Z will be $g·cos(\theta)$, while y will be $g·sin(\theta)$, and $\theta$ is the inclination angle. But we also need to know if acc measurement will be zero when at flat surface, since coordinate system may be reseted manually at each beginning. However, if the reset was done, the z axis acc value should always be exactly one at each beginning under conditions with zero inclination.
 
    But there is a trend that z axis acc value decreased and the y axis acc value increased when the inclination changed from zero to a non-zero value. And from the perspective of IMU itself, it essentially measures acc in the body frame. If acc in world frame is request, there must be an in-built algorithm embeded in the IMU sensor to transform the coordinate systems for acc data and this transformation must rely on 3D angles (if it is, the IMU should be able to output 3D angles).
@@ -123,16 +123,33 @@ please see the matlab code version at 23-Jul-2025.
 
 ![Definition of IMU Base Frame and Vicon World Frame](images/Coordinate_Frame.png)
 
-   **Results: The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in **`calc3DIMUOrientation.m`.
+   **Results: The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in** `calc3DIMUOrientation.m`.
 
 3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:
 
-   Train RMSE = 3.2271 mm
-   Train R2 = 0.9653 mm
-   Train Bias = -0.05 mm
-   Train 95%CI = [-6.37 mm, 6.28 mm]
-   Validation RMSE = 5.8550 mm
-   Validation R2 = 0.8731 mm
-   Validation Bias = 0.73 mm
+   Train RMSE = 3.2271 mm  
+   Train R2 = 0.9653 mm  
+   Train Bias = -0.05 mm  
+   Train 95%CI = [-6.37 mm, 6.28 mm]  
+   Validation RMSE = 5.8550 mm  
+   Validation R2 = 0.8731 mm  
+   Validation Bias = 0.73 mm  
    Validation 95%CI = [-10.65 mm, 12.12 mm]
 
+![TraningResults](images/TrainResults_29Jul25.png)
+
+
+
+## to latest
+1. Adding the edge case data makes the model outcome worse, as follows:
+
+    Train RMSE = 4.4024 mm  
+    Train R2 = 0.9442 mm  
+    Train Bias = -0.04 mm  
+    Train LoA = [-8.67 mm, 8.59 mm]  
+    Validation RMSE = 7.5906 mm  
+    Validation R2 = 0.7867 mm  
+    Validation Bias = 1.08 mm  
+    Validation LoA = [-13.64 mm, 15.81 mm]
+
+   
