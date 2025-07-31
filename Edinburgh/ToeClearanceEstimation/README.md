@@ -129,7 +129,7 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_30Jul25.png)
 
-2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:
+2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:  
     Train RMSE = 3.0697 mm  
     Train R2 = 0.9686 mm  
     Train Bias = -0.07 mm  
