@@ -91,9 +91,8 @@ please see the matlab code version at 23-Jul-2025.
 
 
 ## to 29-Jul-2025
-1. Cannot confirm the acc coordinate system from acc measurements. Just look the gravity component during the first several seconds. In different inclinations, there are actually different baesline value in x and y axes acc measurements, but in z axis, there isn't much diffrences, which doesn't make sense. If as expected, Z will be $g·cos(\theta)$, while y will be $g·sin(\theta)$, and $\theta$ is the inclination angle. But we also need to know if acc measurement will be zero when at flat surface, since coordinate system may be reseted manually at each beginning. However, if the reset was done, the z axis acc value should always be exactly one at each beginning under conditions with zero inclination.  
-   But there is a trend that z axis acc value decreased and the y axis acc value increased when the inclination changed from zero to a non-zero value. And from the perspective of IMU itself, it essentially measures acc in the body frame. If acc in world frame is request, there must be an in-built algorithm embeded in the IMU sensor to transform the coordinate systems for acc data and this transformation must rely on 3D angles (if it is, the IMU should be able to output 3D angles).  
-   **So, personally, I think the acc measurement should be represented in the body-based coordinate system. Thereby, 3D angles are still required as input to the model so as to better estimate toe clearance.**
+1. There is a trend that z axis acc value decreased and the y axis acc value increased when the inclination changed from zero to a non-zero value. And from the perspective of IMU itself, it essentially measures acc in the body frame. If acc in world frame is request, there must be an in-built algorithm embeded in the IMU sensor to transform the coordinate systems for acc data and this transformation must rely on 3D angles (if it is, the IMU should be able to output 3D angles).  
+   **So, I think the acc measurement should be represented in the body-based coordinate system. Thereby, 3D angles are still required as input to the model so as to better estimate toe clearance.**
 
 2. It's hard to estimate shoe imu 3D orientation. Even though I can build a foot coordinate frame based on three markers, MTP1, MTP5, as well as Heel, the relation of the marker-based frame with the shoe imu frame cannot be known. I tried to build the marker-baesd frame (x-axis: MTP1-to-MTP5; z-axis: norminal vector of the plane that is constructed using the vector#1 (heel marker to the middle point of MTP1-MTP5) and the vector#2 x-axis; y is obtained from the cross-product of x-axis and z-axis), and calculate the relative orientation angle between this frame and the vicon world frame. And then, transform this relative angle to the IMU original frame, as depicted below.
 
@@ -106,14 +105,15 @@ please see the matlab code version at 23-Jul-2025.
    Train RMSE = 3.2271 mm  
    Train R2 = 0.9653 mm  
    Train Bias = -0.05 mm  
-   Train 95%CI = [-6.37 mm, 6.28 mm]  
+   Train 95CI = [-6.37 mm, 6.28 mm]  
    Validation RMSE = 5.8550 mm  
    Validation R2 = 0.8731 mm  
    Validation Bias = 0.73 mm  
-   Validation 95%CI = [-10.65 mm, 12.12 mm]
+   Validation 95CI = [-10.65 mm, 12.12 mm]
 
 ![TraningResults](images/TrainResults_29Jul25.png)
 
+4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows: 
 
 
 ## to latest
@@ -129,7 +129,7 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_30Jul25.png)
 
-2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value), obtains the results as follows:
+2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:
     Train RMSE = 3.0697 mm  
     Train R2 = 0.9686 mm  
     Train Bias = -0.07 mm  
@@ -144,4 +144,4 @@ please see the matlab code version at 23-Jul-2025.
 3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):
 
 
-4. Try leave-one-subject-out to test the difference if using a different subject for validation.
+4. leave-one-subject-out results of each subject as the validation (without edge case data; using logic shoe grf value):
