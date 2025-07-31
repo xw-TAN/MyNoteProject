@@ -113,7 +113,16 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_29Jul25.png)
 
-4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows: 
+4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows:  
+    Train RMSE = 4.0920 mm  
+    Train R2 = 0.9460 mm  
+    Train Bias = -0.20 mm  
+    Train LoA = [-8.21 mm, 7.81 mm]  
+    Validation RMSE = 6.2310 mm  
+    Validation R2 = 0.8737 mm  
+    Validation Bias = -0.25 mm  
+    Validation LoA = [-12.45 mm, 11.96 mm]  
+
 
 
 ## to latest
