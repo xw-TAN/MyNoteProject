@@ -351,18 +351,18 @@ y_pred_flat = all_pred(:);
 SS_res = sum((y_true_flat - y_pred_flat).^2);
 SS_tot = sum((y_true_flat - mean(y_true_flat)).^2);
 
-R2 = 1 - SS_res / SS_tot;
+R2_train = 1 - SS_res / SS_tot;
 
 diffs = all_pred - all_true;
 diffs_flat = diffs(:); 
 
-bias = mean(diffs_flat);
+bias_train = mean(diffs_flat);
 std_dev = std(diffs_flat);
-LoA_upper = bias + 1.96 * std_dev;
-LoA_lower = bias - 1.96 * std_dev;
-fprintf('Train R2 = %.4f mm\n', R2);
-fprintf('Train Bias = %.2f mm\n', bias);
-fprintf('Train 95CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+LoA_upper_train = bias_train + 1.96 * std_dev;
+LoA_lower_train = bias_train - 1.96 * std_dev;
+fprintf('Train R2 = %.4f mm\n', R2_train);
+fprintf('Train Bias = %.2f mm\n', bias_train);
+fprintf('Train 95CI = [%.2f mm, %.2f mm]\n', LoA_lower_train, LoA_upper_train);
 
 %[VALIDATION DATASET] calculate RMSE
 val_mse  = cellfun(@(y_true, y_pred) mean((y_true - y_pred).^2, 'all'), y_true_val, y_pred_val);
@@ -379,18 +379,18 @@ y_pred_flat = all_pred(:);
 SS_res = sum((y_true_flat - y_pred_flat).^2);              % Residual sum of squares
 SS_tot = sum((y_true_flat - mean(y_true_flat)).^2);        % Total sum of squares
 
-R2 = 1 - SS_res / SS_tot;
+R2_val = 1 - SS_res / SS_tot;
 
 diffs = all_pred - all_true;
 diffs_flat = diffs(:); 
 
-bias = mean(diffs_flat);
+bias_val = mean(diffs_flat);
 std_dev = std(diffs_flat);
-LoA_upper = bias + 1.96 * std_dev;
-LoA_lower = bias - 1.96 * std_dev;
-fprintf('Validation R2 = %.4f mm\n', R2);
-fprintf('Validation Bias = %.2f mm\n', bias);
-fprintf('Validation 95CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+LoA_upper_val = bias_val + 1.96 * std_dev;
+LoA_lower_val = bias_val - 1.96 * std_dev;
+fprintf('Validation R2 = %.4f mm\n', R2_val);
+fprintf('Validation Bias = %.2f mm\n', bias_val);
+fprintf('Validation 95CI = [%.2f mm, %.2f mm]\n', LoA_lower_val, LoA_upper_val);
 
 
 %% plot figures
@@ -525,6 +525,6 @@ filename='ValCompFig.fig';
 saveas(val_comp_fig,[local_data_dir filesep filename])
 
 ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,'options',options,'scale_y',scale_y,'window',window,'x_set',x_set);
-ResultsParams = struct('bias',bias,'LoA_lower',LoA_lower,'LoA_upper',LoA_upper,'R2',R2,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
+ResultsParams = struct('bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
 
 save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
