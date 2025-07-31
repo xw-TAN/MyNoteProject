@@ -123,7 +123,7 @@ please see the matlab code version at 23-Jul-2025.
     Validation Bias = -0.25 mm  
     Validation LoA = [-12.45 mm, 11.96 mm]  
 
-![TraningResults](TrainResults_31Jul25_03.png)
+![TraningResults](images/TrainResults_31Jul25_03.png)
 
 
 
