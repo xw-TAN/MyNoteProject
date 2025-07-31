@@ -113,7 +113,18 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_29Jul25.png)
 
-4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows: 
+4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows:  
+    Train RMSE = 4.0920 mm  
+    Train R2 = 0.9460 mm  
+    Train Bias = -0.20 mm  
+    Train LoA = [-8.21 mm, 7.81 mm]  
+    Validation RMSE = 6.2310 mm  
+    Validation R2 = 0.8737 mm  
+    Validation Bias = -0.25 mm  
+    Validation LoA = [-12.45 mm, 11.96 mm]  
+
+![TraningResults](images/TrainResults_31Jul25_03.png)
+
 
 
 ## to latest
@@ -155,12 +166,12 @@ please see the matlab code version at 23-Jul-2025.
 
 4. leave-one-subject-out results of each subject as the validation (without edge case data; using logic shoe grf value):
 
-5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:
-	Train RMSE = 2.2845 mm
-	Train R2 = ...
-	Train Bias = ...
-	Train 95CI = ...
-	Validation RMSE = 4.6970 mm
-	Validation R2 = 0.9182 mm
-	Validation Bias = 0.58 mm
-	Validation 95CI = [-8.55 mm, 9.72 mm]
+5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:  
+	Train RMSE = 2.2845 mm  
+	Train R2 = ...  
+	Train Bias = ...  
+	Train 95CI = ...  
+	Validation RMSE = 4.6970 mm  
+	Validation R2 = 0.9182 mm  
+	Validation Bias = 0.58 mm  
+	Validation 95CI = [-8.55 mm, 9.72 mm]  
