@@ -117,7 +117,7 @@ please see the matlab code version at 23-Jul-2025.
 
 
 ## to latest
-1. Adding the edge case data makes the model outcome worse, as follows:  
+1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
     Train RMSE = 4.4024 mm  
     Train R2 = 0.9442 mm  
     Train Bias = -0.04 mm  
@@ -129,4 +129,10 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_30Jul25.png)
 
-2. Try leave-one-subject-out to test the difference if using a different subject for validation.
+2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value), obtains the results as follows:
+
+
+3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):
+
+
+5. Try leave-one-subject-out to test the difference if using a different subject for validation.
