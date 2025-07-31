@@ -10,10 +10,11 @@ clear;
 num = 10;
 
 % loop each subject
-for i = 10:num
+for i = 1:num
+    local_data_dir=fullfile(pwd,'..','..','..','Moonshot','LocalData','Experiment','FESTrajectories_v02');
     % ↓ load old dataset
     subNo = ['S' num2str(i)];
-    load([subNo '.mat']);
+    load([local_data_dir filesep subNo '.mat']);
     
     % ↓ wrap
     R.S = eval(subNo);
@@ -27,7 +28,7 @@ for i = 10:num
         % ↓ replace '_' with '-' to match the files' name
         fns_new = fns{j};
         underscores = find(fns_new == '_');
-        if numel(underscores) == 2
+        if numel(underscores) == 2 && ~contains(fns_new,'edgecase')
             fns_new(underscores(2)) = '-';
         end
 
@@ -66,7 +67,11 @@ for i = 10:num
 
 
         % ↓ get markerData file path
-        pathName = ['./' subNo '/MarkerData' '/' fns_new '_Processed.trc'];
+        if contains(fns_new,'edgecase')
+            pathName = [local_data_dir filesep subNo filesep 'MarkerData' filesep 'EdgeCases' filesep fns_new '_Processed.trc'];
+        else
+            pathName = [local_data_dir filesep subNo filesep 'MarkerData' filesep fns_new '_Processed.trc'];
+        end
         % ↓ get file data
         markerData = readmatrix(pathName, 'FileType', 'text');
         % ↓ get the Timesteps
@@ -96,6 +101,7 @@ for i = 10:num
         markerHEEL_R(idxNan, :) = [];
 
         % ↓ add new info into the old dataset
+        R.S.MarkerData.([fns{j} '_Processed']).data=[];
         R.S.MarkerData.([fns{j} '_Processed']).data.Timesteps = markerTime';
 
         % ↓ calculate 3D IMU orientation angles

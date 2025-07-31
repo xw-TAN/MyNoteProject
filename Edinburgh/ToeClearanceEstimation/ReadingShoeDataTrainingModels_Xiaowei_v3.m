@@ -9,7 +9,9 @@ subject_weights     = [59.1,59.7,84.1,87.9,70.4,72.8,72.2,89.9,57.4,77.3]; % [kg
 subject_shoe_size   = [42, 40, 42, 42, 42, 40, 40, 42, 40, 42]; % [EU Size]
 subject_shoe_size_m = (subject_shoe_size + 10)./200; % [m]
 
-% load S1_S10_AddedInfo.mat;
+if ~exist('S1','var')
+    load S1_S10_AddedInfo.mat;
+end
 
 load butterworth_3rd_FS100Hz_FC15Hz.mat; % butterworth filter, 3rd order, fs 100Hz, fc 15Hz
 
@@ -55,7 +57,6 @@ total_subject = 1:10;
 val_subjects  = 1;
 train_test_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10]; % first 80% for traning and last 20% for testing
 
-
 % ↓ loop each subject
 for i=total_subject
     % ↓ get all fieldnames under 'ShokacData'
@@ -70,6 +71,9 @@ for i=total_subject
         % ↓ get incline angle [deg]
         inc=sscanf(strrep(experiment_name(strfind(experiment_name,'n')+1:end),'_','-'), '%f');
 
+        if isempty(inc)
+            break
+        end
         % temporarily negect toe clearance collected with non-zero treadmill inclination
         % if inc ~= 0 
         %     continue;
@@ -122,10 +126,17 @@ for i=total_subject
                         % (experiment_data.heel_l(k:k+window,   2:7)  ./max_heel)';...
 
                         % logic grf values result in better accuracy
+                        % (capture gait state)
                         (experiment_data.thumb_l(k:k+window,  2:7) > 0.5)';...
                         (experiment_data.little_l(k:k+window, 2:7) > 0.5)';...
                         (experiment_data.heel_l(k:k+window,   2:7) > 0.5)';...
-
+                        
+                        % Grf normalised values (may be able to capture -ve
+                        % toe clearance due to shoe deformation?)
+                        (experiment_data.thumb_l(k:k+window,  2:7))';...
+                        (experiment_data.little_l(k:k+window, 2:7))';...
+                        (experiment_data.heel_l(k:k+window,   2:7))';...
+                        
                         % (experiment_data.accel_l(k:k+window, 1:3)  ./max_accel)';...
                         % (experiment_data.accel_l(k:k+window, 1:3))';...
                         (experiment_data.accel_l(k:k+window, 1:3))'.*9.8;...
@@ -168,7 +179,7 @@ for i=total_subject
 end
 
 
-% ↓ remove NaN elements, which may affects the model training
+%% ↓ remove NaN elements, which may affects the model training
 emptyIdx = false(numel(y_train), 1);
 for i = 1:numel(y_train)
     yi = y_train{i};
@@ -236,15 +247,12 @@ end
 y_val(emptyIdx) = [];
 x_val(emptyIdx) = [];
 
-
-
-% ↓ scale output
+% ↓ scale down the output
 scale_y = 0.1;
+scale_y = 0.02;
 y_train = cellfun(@(v) v * scale_y, y_train, 'UniformOutput', false);
 y_test  = cellfun(@(v) v * scale_y, y_test,  'UniformOutput', false);
 y_val   = cellfun(@(v) v * scale_y, y_val,   'UniformOutput', false);
-
-
 
 %% LSTMs
 
@@ -278,18 +286,19 @@ if dropoutLayer1>0
     %          ];
     
         layers = [  sequenceInputLayer(numFeatures) % input layer
-                lstmLayer(numFeatures*5, 'OutputMode', 'sequence')  % 1st layer
+                bilstmLayer(numFeatures*5, 'OutputMode', 'sequence')  % 1st layer
                 dropoutLayer(dropoutLayer1)
                  
                 lstmLayer(numFeatures*4, 'OutputMode', 'sequence')  % 2nd layer
                 batchNormalizationLayer
                 dropoutLayer(dropoutLayer1)
 
+%                 lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 3rd layer
                 lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 3rd layer
                 fullyConnectedLayer(64)
                 batchNormalizationLayer
                 dropoutLayer(dropoutLayer1)
-
+% 
                 fullyConnectedLayer(numResponses) % output layer
                 regressionLayer
              ];
@@ -324,7 +333,6 @@ options = trainingOptions('adam',...
 % scale output back
 y_true_train = cellfun(@(v) v ./ scale_y, y_train, 'UniformOutput', false);
 y_pred_train = cellfun(@(v) v ./ scale_y, predict(net, x_train), 'UniformOutput', false);
-
 y_true_val = cellfun(@(v) v ./ scale_y, y_val, 'UniformOutput', false);
 y_pred_val = cellfun(@(v) v ./ scale_y, predict(net, x_val), 'UniformOutput', false);
 
@@ -356,9 +364,7 @@ fprintf('Train R2 = %.4f mm\n', R2);
 fprintf('Train Bias = %.2f mm\n', bias);
 fprintf('Train 95CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
 
-
-
-% [VALIDATION DATASET] calculate RMSE
+%[VALIDATION DATASET] calculate RMSE
 val_mse  = cellfun(@(y_true, y_pred) mean((y_true - y_pred).^2, 'all'), y_true_val, y_pred_val);
 val_rmse = sqrt(mean(val_mse));
 fprintf('Validation RMSE = %.4f mm\n', val_rmse);
@@ -422,13 +428,13 @@ maxVal = max( [yy_true_train, yy_pred_train] );
 minVal = minVal-abs(maxVal- minVal)*0.1;
 maxVal = maxVal+abs(maxVal- minVal)*0.1;
 
-figure; hold on; 
+train_corr_fig=figure; hold on; 
 xlabel('yy_true_train (mm)', 'Interpreter', 'none'); 
 ylabel('yy_pred_train (mm)', 'Interpreter', 'none');
 plot(minVal:maxVal, minVal:maxVal, '--', 'color', 'black', 'LineWidth', 3); % reference line
 plot(yy_true_train, yy_pred_train, 'o', 'MarkerEdgeColor', blue_colour);
 
-figure; hold on; 
+train_comp_fig=figure; hold on; 
 xlabel('points', 'Interpreter', 'none'); 
 ylabel('yy_true_train & yy_pred_train (mm)', 'Interpreter', 'none');
 plot(1:length(yy_true_train), yy_true_train, 'Color', blue_colour, 'LineWidth', linewidth);
@@ -462,16 +468,63 @@ maxVal = max( [yy_true_val, yy_pred_val] );
 minVal = minVal-abs(maxVal- minVal)*0.1;
 maxVal = maxVal+abs(maxVal- minVal)*0.1;
 
-figure; hold on; 
+val_corr_fig=figure; hold on; 
 xlabel('yy_true_val (mm)', 'Interpreter', 'none'); 
 ylabel('yy_pred_val (mm)', 'Interpreter', 'none');
 plot(minVal:maxVal, minVal:maxVal, '--', 'color', 'black', 'LineWidth', 3); % reference line
 plot(yy_true_val, yy_pred_val, 'o', 'MarkerEdgeColor', blue_colour);
 
-figure; hold on; 
+val_comp_fig=figure; hold on; 
 xlabel('points', 'Interpreter', 'none'); 
 ylabel('yy_true_val & yy_pred_val (mm)', 'Interpreter', 'none');
 plot(1:length(yy_true_val), yy_true_val, 'Color', blue_colour, 'LineWidth', linewidth);
 plot(1:length(yy_pred_val), yy_pred_val, '-.', 'Color', orange_colour, 'LineWidth', linewidth);
 legend('yy_true_val', 'yy_pred_val', 'Interpreter', 'none');
 
+%% Save figs and results
+% Define results path
+local_data_dir=fullfile(pwd,'..','..','..','Moonshot','LocalData','Experiment','FESTrajectories_v02','TrainingModelsResults');
+% Observe present folders (named in arithmetic order)
+files = dir(local_data_dir);
+dirFlags= [files.isdir];
+subFolder = files(dirFlags);
+subFolderNames = [str2double({subFolder(3:end).name})];
+% Observe latest folder of results (largest number)
+maxFolderNum=max(subFolderNames);
+% Create the next folder
+nextFolderName = maxFolderNum+1;
+if nextFolderName<10
+    nextFolderName=['00' num2str(nextFolderName)];
+elseif nextFolderName<100
+    nextFolderName=['0' num2str(nextFolderName)];
+else
+    nextFolderName=['0' num2str(nextFolderName)];
+end
+mkdir(fullfile(local_data_dir,nextFolderName))
+local_data_dir=fullfile(local_data_dir,nextFolderName);
+
+% Save figures and useful script information 
+filename='TrainCorrFig.png';
+saveas(train_corr_fig,[local_data_dir filesep filename])
+filename='TrainCorrFig.fig';
+saveas(train_corr_fig,[local_data_dir filesep filename])
+
+filename='TrainCompFig.png';
+saveas(train_comp_fig,[local_data_dir filesep filename])
+filename='TrainCompFig.fig';
+saveas(train_comp_fig,[local_data_dir filesep filename])
+
+filename='ValCorrFig.png';
+saveas(val_corr_fig,[local_data_dir filesep filename])
+filename='ValCorrFig.fig';
+saveas(val_corr_fig,[local_data_dir filesep filename])
+
+filename='ValCompFig.png';
+saveas(val_comp_fig,[local_data_dir filesep filename])
+filename='ValCompFig.fig';
+saveas(val_comp_fig,[local_data_dir filesep filename])
+
+ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,'options',options,'scale_y',scale_y,'window',window,'x_set',x_set);
+ResultsParams = struct('bias',bias,'LoA_lower',LoA_lower,'LoA_upper',LoA_upper,'R2',R2,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
+
+save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
