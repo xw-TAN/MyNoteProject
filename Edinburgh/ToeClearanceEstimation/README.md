@@ -145,3 +145,13 @@ please see the matlab code version at 23-Jul-2025.
 
 
 4. leave-one-subject-out results of each subject as the validation (without edge case data; using logic shoe grf value):
+
+5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:
+	Train RMSE = 2.2845 mm
+	Train R2 = 0.9182 mm
+	Train Bias = 0.58 mm
+	Train 95CI = [-8.55 mm, 9.72 mm]
+	Validation RMSE = 4.6970 mm
+	Validation R2 = 0.9182 mm
+	Validation Bias = 0.58 mm
+	Validation 95CI = [-8.55 mm, 9.72 mm]
