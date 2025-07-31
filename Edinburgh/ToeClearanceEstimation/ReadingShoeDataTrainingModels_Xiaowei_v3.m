@@ -354,7 +354,7 @@ LoA_upper = bias + 1.96 * std_dev;
 LoA_lower = bias - 1.96 * std_dev;
 fprintf('Train R2 = %.4f mm\n', R2);
 fprintf('Train Bias = %.2f mm\n', bias);
-fprintf('Train 95%CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+fprintf('Train 95CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
 
 
 
@@ -384,7 +384,7 @@ LoA_upper = bias + 1.96 * std_dev;
 LoA_lower = bias - 1.96 * std_dev;
 fprintf('Validation R2 = %.4f mm\n', R2);
 fprintf('Validation Bias = %.2f mm\n', bias);
-fprintf('Validation 95%CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
+fprintf('Validation 95CI = [%.2f mm, %.2f mm]\n', LoA_lower, LoA_upper);
 
 
 %% plot figures
