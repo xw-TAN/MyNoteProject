@@ -27,18 +27,19 @@ results.S9  =S9;
 results.S10 =S10;
 
 % Normalising parameters between [-0.9, 0.9]
-max_thumb   =50*ones(1,6);
-max_little  =50*ones(1,6);
-max_heel    =50*ones(1,6);
-max_accel   =[20 20 20]; % [g, with gravity]
-max_gyro    =600; % [deg/s]
-max_weight  =100; % [N]
-max_speed   =1.5; % [m/s]
-max_time    =20; % [s]
-max_inc     =11; % [deg]
-max_shoe    =43; % [EU Size]
-max_shoe_mm =0.26; % [m]
-
+max_thumb        =50*ones(1,6);
+max_little       =50*ones(1,6);
+max_heel         =50*ones(1,6);
+max_Shokac_force =50*ones(1,6);
+max_accel        =[20 20 20]; % [g, with gravity]
+max_gyro         =600; % [deg/s]
+max_weight       =100; % [N]
+max_speed        =1.5; % [m/s]
+max_time         =20; % [s]
+max_inc          =11; % [deg]
+max_shoe         =43; % [EU Size]
+max_shoe_mm      =0.26; % [m]
+max_eulerAgl     =185; %[degrees]
 
 %% generate dataset
 window=60; % approximately one cycle (data window length)
@@ -71,9 +72,16 @@ for i=total_subject
         % ↓ get incline angle [deg]
         inc=sscanf(strrep(experiment_name(strfind(experiment_name,'n')+1:end),'_','-'), '%f');
 
+        % Break if inclination cannot be identified (occurs in edgecases)
         if isempty(inc)
             break
         end
+        
+        % Ignore Edge cases
+        if contains(experiment_name,'edgecase')
+            continue
+        end
+        
         % temporarily negect toe clearance collected with non-zero treadmill inclination
         % if inc ~= 0 
         %     continue;
@@ -120,10 +128,7 @@ for i=total_subject
 
             % ↓ create a window of input data (only left)
             x_set = {[  (experiment_data.time(k:k+window,1)-experiment_data.time(k,1))';...
-
-                        % (experiment_data.thumb_l(k:k+window,  2:7)  ./max_thumb)';...
-                        % (experiment_data.little_l(k:k+window, 2:7)  ./max_little)';...
-                        % (experiment_data.heel_l(k:k+window,   2:7)  ./max_heel)';...
+%                         ((experiment_data.time(k:k+window,1)-experiment_data.time(k,1))/max_time)';...
 
                         % logic grf values result in better accuracy
                         % (capture gait state)
@@ -136,22 +141,27 @@ for i=total_subject
                         (experiment_data.thumb_l(k:k+window,  2:7))';...
                         (experiment_data.little_l(k:k+window, 2:7))';...
                         (experiment_data.heel_l(k:k+window,   2:7))';...
+%                         (experiment_data.thumb_l(k:k+window,  2:7)./max_Shokac_force)';...
+%                         (experiment_data.little_l(k:k+window, 2:7)./max_Shokac_force)';...
+%                         (experiment_data.heel_l(k:k+window,   2:7)./max_Shokac_force)';...
                         
-                        % (experiment_data.accel_l(k:k+window, 1:3)  ./max_accel)';...
-                        % (experiment_data.accel_l(k:k+window, 1:3))';...
                         (experiment_data.accel_l(k:k+window, 1:3))'.*9.8;...
+%                         (experiment_data.accel_l(k:k+window, 1:3)  ./max_accel)';...
 
-                        % (experiment_data.gyro_l(k:k+window, 1)     ./max_gyro)';...
                         (experiment_data.gyro_l(k:k+window, 1))';...
+%                         (experiment_data.gyro_l(k:k+window, 1)     ./max_gyro)';...
 
-                        % (inc*ones(length(k:k+window),1)/max_inc)';...
                         (inc*ones(length(k:k+window),1))';...
-
+%                         (inc*ones(length(k:k+window),1)/max_inc)';...
+                        
                         eulerAgl';...
-
+%                         (eulerAgl/max_eulerAgl)';...
+                        
                         % (subject_weights(i)*ones(length(k:k+window),1) ./max_weight)';...
-                        % (subject_shoe_size(i)*ones(length(k:k+window),1) ./max_shoe)';...
-                        (subject_shoe_size_m(i)*ones(length(k:k+window),1))',                      
+                        
+                        (subject_shoe_size_m(i)*ones(length(k:k+window),1))',  
+%                         ((subject_shoe_size(i)*ones(length(k:k+window),1)-38)/6)';...
+                        
                         % (experiment_data.phase_l(k:k+window, 1))'
                     ]};
 
@@ -272,6 +282,8 @@ shuffle = 'every-epoch'; % sequence-to-sequence training and estimation
 % layer1='last';
 layer1='sequence';
 mini_batch_size=128;
+L2Regularization=1e-04;
+% L2Regularization=1e-08;
 
 if dropoutLayer1>0
     % layers = [  sequenceInputLayer(numFeatures) % input layer (feature dimensions)
@@ -318,7 +330,7 @@ options = trainingOptions('adam',...
                           'LearnRateSchedule', 'piecewise', ... % decrease method
                           'LearnRateDropPeriod', 5, ... % decrease rate once each 5 epoch
                           'LearnRateDropFactor', 0.5, ... % decrease 50%
-                          'L2Regularization', 1e-4, ...
+                          'L2Regularization', L2Regularization, ...
                           'Shuffle', shuffle, ...
                           'Verbose', false, ...
                           'Plots', 'training-progress'); % pop training progress figure
@@ -523,6 +535,11 @@ filename='ValCompFig.png';
 saveas(val_comp_fig,[local_data_dir filesep filename])
 filename='ValCompFig.fig';
 saveas(val_comp_fig,[local_data_dir filesep filename])
+
+% Save the loss graph from MATLAB window (training-progress)
+currentfig = findall(groot, 'Tag', 'NNET_CNN_TRAININGPLOT_UIFIGURE');
+exportgraphics(currentfig(1).CurrentAxes,[local_data_dir filesep 'LearningConvergence.png'])
+
 
 ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,'options',options,'scale_y',scale_y,'window',window,'x_set',x_set);
 ResultsParams = struct('bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
