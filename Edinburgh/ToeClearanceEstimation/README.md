@@ -141,16 +141,16 @@ please see the matlab code version at 23-Jul-2025.
 
 ![TraningResults](images/TrainResults_31Jul25.png)
 
-3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):
-    Train RMSE = 3.1349 mm
-    Train R2 = 0.9672 mm
-    Train Bias = -0.02 mm
-    Train 95CI = [-6.16 mm, 6.12 mm]
-    Validation RMSE = 5.6893 mm
-    Validation R2 = 0.8800 mm
-    Validation Bias = 1.12 mm
-    Validation 95CI = [-9.82 mm, 12.05 mm]
+3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
+    Train RMSE = 3.1349 mm  
+    Train R2 = 0.9672 mm  
+    Train Bias = -0.02 mm  
+    Train 95CI = [-6.16 mm, 6.12 mm]  
+    Validation RMSE = 5.6893 mm  
+    Validation R2 = 0.8800 mm  
+    Validation Bias = 1.12 mm  
+    Validation 95CI = [-9.82 mm, 12.05 mm]  
 
-
+![TraningResults](images/TrainResults_31Jul25_02.png)
 
 4. leave-one-subject-out results of each subject as the validation (without edge case data; using logic shoe grf value):
