@@ -1,4 +1,4 @@
-# Debug log of toe clearance estimation model
+# Log of Toe Clearance Estimation Model
 
 
 ## to 14-Jul-2025
