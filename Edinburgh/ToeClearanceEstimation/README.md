@@ -139,9 +139,9 @@ please see the matlab code version at 23-Jul-2025.
     Validation Bias = 1.02 mm  
     Validation 95CI = [-9.65 mm, 11.70 mm]  
 
-
+![TraningResults](images/TrainResults_31Jul25.png)
 
 3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):
 
 
-5. Try leave-one-subject-out to test the difference if using a different subject for validation.
+4. Try leave-one-subject-out to test the difference if using a different subject for validation.
