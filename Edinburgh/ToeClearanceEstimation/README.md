@@ -130,6 +130,15 @@ please see the matlab code version at 23-Jul-2025.
 ![TraningResults](images/TrainResults_30Jul25.png)
 
 2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value), obtains the results as follows:
+    Train RMSE = 3.0697 mm  
+    Train R2 = 0.9686 mm  
+    Train Bias = -0.07 mm  
+    Train 95CI = [-6.09 mm, 5.94 mm]  
+    Validation RMSE = 5.5402 mm  
+    Validation R2 = 0.8862 mm  
+    Validation Bias = 1.02 mm  
+    Validation 95CI = [-9.65 mm, 11.70 mm]  
+
 
 
 3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):
