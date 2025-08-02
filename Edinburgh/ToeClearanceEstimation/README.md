@@ -103,11 +103,11 @@ please see the matlab code version at 23-Jul-2025.
 3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:
 
    Train RMSE = 3.2271 mm  
-   Train R2 = 0.9653 mm  
+   Train R2 = 0.9653  
    Train Bias = -0.05 mm  
    Train 95CI = [-6.37 mm, 6.28 mm]  
    Validation RMSE = 5.8550 mm  
-   Validation R2 = 0.8731 mm  
+   Validation R2 = 0.8731  
    Validation Bias = 0.73 mm  
    Validation 95CI = [-10.65 mm, 12.12 mm]
 
@@ -115,11 +115,11 @@ please see the matlab code version at 23-Jul-2025.
 
 4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows:  
     Train RMSE = 4.0920 mm  
-    Train R2 = 0.9460 mm  
+    Train R2 = 0.9460  
     Train Bias = -0.20 mm  
     Train LoA = [-8.21 mm, 7.81 mm]  
     Validation RMSE = 6.2310 mm  
-    Validation R2 = 0.8737 mm  
+    Validation R2 = 0.8737  
     Validation Bias = -0.25 mm  
     Validation LoA = [-12.45 mm, 11.96 mm]  
 
@@ -130,11 +130,11 @@ please see the matlab code version at 23-Jul-2025.
 ## to latest
 1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
     Train RMSE = 4.4024 mm  
-    Train R2 = 0.9442 mm  
+    Train R2 = 0.9442  
     Train Bias = -0.04 mm  
     Train LoA = [-8.67 mm, 8.59 mm]  
     Validation RMSE = 7.5906 mm  
-    Validation R2 = 0.7867 mm  
+    Validation R2 = 0.7867  
     Validation Bias = 1.08 mm  
     Validation LoA = [-13.64 mm, 15.81 mm]
 
@@ -142,11 +142,11 @@ please see the matlab code version at 23-Jul-2025.
 
 2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:  
     Train RMSE = 3.0697 mm  
-    Train R2 = 0.9686 mm  
+    Train R2 = 0.9686  
     Train Bias = -0.07 mm  
     Train 95CI = [-6.09 mm, 5.94 mm]  
     Validation RMSE = 5.5402 mm  
-    Validation R2 = 0.8862 mm  
+    Validation R2 = 0.8862  
     Validation Bias = 1.02 mm  
     Validation 95CI = [-9.65 mm, 11.70 mm]  
 
@@ -154,17 +154,29 @@ please see the matlab code version at 23-Jul-2025.
 
 3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
     Train RMSE = 3.1349 mm  
-    Train R2 = 0.9672 mm  
+    Train R2 = 0.9672  
     Train Bias = -0.02 mm  
     Train 95CI = [-6.16 mm, 6.12 mm]  
     Validation RMSE = 5.6893 mm  
-    Validation R2 = 0.8800 mm  
+    Validation R2 = 0.8800  
     Validation Bias = 1.12 mm  
     Validation 95CI = [-9.82 mm, 12.05 mm]  
 
 ![TraningResults](images/TrainResults_31Jul25_02.png)
 
-4. leave-one-subject-out results of each subject as the validation (without edge case data; using logic shoe grf value):
+4. Leave-one-subject-out results of each subject as the validation and the remaining nine subjects as the training and test (without including edge case data; using the new version of code [01-Aug-2025]):
+
+|Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|Train RMSE /mm|0|0|0|0|0|0|0|0|0|0|
+|Train R2|0|0|0|0|0|0|0|0|0|0|
+|Train Bias /mm|0|0|0|0|0|0|0|0|0|0|
+|Train 95CI /mm|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|
+|Validation RMSE /mm|0|0|0|0|0|0|0|0|0|0|
+|Validation R2|0|0|0|0|0|0|0|0|0|0|
+|Validation Bias /mm|0|0|0|0|0|0|0|0|0|0|
+|Validation 95CI /mm|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|[0,0]|
+|Training Duration /min|0|0|0|0|0|0|0|0|0|0|
 
 5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:  
 	Train RMSE = 2.2845 mm  
@@ -172,6 +184,6 @@ please see the matlab code version at 23-Jul-2025.
 	Train Bias = ...  
 	Train 95CI = ...  
 	Validation RMSE = 4.6970 mm  
-	Validation R2 = 0.9182 mm  
+	Validation R2 = 0.9182  
 	Validation Bias = 0.58 mm  
 	Validation 95CI = [-8.55 mm, 9.72 mm]  
