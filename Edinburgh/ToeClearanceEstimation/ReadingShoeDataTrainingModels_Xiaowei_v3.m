@@ -360,7 +360,7 @@ bias_train = mean(diffs_flat);
 std_dev = std(diffs_flat);
 LoA_upper_train = bias_train + 1.96 * std_dev;
 LoA_lower_train = bias_train - 1.96 * std_dev;
-fprintf('Train R2 = %.4f mm\n', R2_train);
+fprintf('Train R2 = %.4f \n', R2_train);
 fprintf('Train Bias = %.2f mm\n', bias_train);
 fprintf('Train 95CI = [%.2f mm, %.2f mm]\n', LoA_lower_train, LoA_upper_train);
 
@@ -388,7 +388,7 @@ bias_val = mean(diffs_flat);
 std_dev = std(diffs_flat);
 LoA_upper_val = bias_val + 1.96 * std_dev;
 LoA_lower_val = bias_val - 1.96 * std_dev;
-fprintf('Validation R2 = %.4f mm\n', R2_val);
+fprintf('Validation R2 = %.4f \n', R2_val);
 fprintf('Validation Bias = %.2f mm\n', bias_val);
 fprintf('Validation 95CI = [%.2f mm, %.2f mm]\n', LoA_lower_val, LoA_upper_val);
 
@@ -526,5 +526,6 @@ saveas(val_comp_fig,[local_data_dir filesep filename])
 
 ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,'options',options,'scale_y',scale_y,'window',window,'x_set',x_set);
 ResultsParams = struct('bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
+
 
 save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
