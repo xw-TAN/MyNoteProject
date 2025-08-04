@@ -12,7 +12,7 @@ function [euler_angles] = calc3DShankOrientation(s_upp, s_med, s_lat, side)
 N = size(s_upp, 1);
 R_all = zeros(3,3,N);
 
-%% create marker-based frame [build the same frame with Vicon]
+%% create marker-based frame [build a frame similar to Vicon frame]
 for i = 1:N
     if side == 'L'
         % z-axis, right direction whether the left or right leg
@@ -58,3 +58,4 @@ end
 euler_angles = unwrap(deg2rad(euler_angles), [], 1) * 180/pi;
 
 end
+
