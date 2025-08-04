@@ -74,16 +74,34 @@ for i = 1:num
         end
         % ↓ get file data
         markerData = readmatrix(pathName, 'FileType', 'text');
+        % ↓ get strings at line 4
+        lines = readlines(pathName);
+        Title = split(lines(4));
         % ↓ get the Timesteps
         markerTime = markerData(:, 2);
+
         % ↓ get the Left MTP1, MTP5, HEEL
-        markerMTP1_L = markerData(:, 78:80);
-        markerMTP5_L = markerData(:, 81:83);
-        markerHEEL_L = markerData(:, 75:77);
+        idx = find(contains(Title, 'L_Heel'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerHEEL_L = markerData(:, rag);
+        idx = find(contains(Title, 'L_MTP1'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP1_L = markerData(:, rag);
+        idx = find(contains(Title, 'L_MTP5'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP5_L = markerData(:, rag);
+        
         % ↓ get the Right MTP1, MTP5, HEEL
-        markerMTP1_R = markerData(:, 66:68);
-        markerMTP5_R = markerData(:, 69:71);
-        markerHEEL_R = markerData(:, 63:65);
+        idx = find(contains(Title, 'R_Heel'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerHEEL_R = markerData(:, rag);
+        idx = find(contains(Title, 'R_MTP1'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP1_R = markerData(:, rag);
+        idx = find(contains(Title, 'R_MTP5'));
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP5_R = markerData(:, rag);
+
         % ↓ delete NaN elements
         idxNan = isnan(markerTime) | ...
                  any(isnan(markerMTP1_L), 2) | ...
@@ -121,4 +139,5 @@ for i = 1:num
     vars = who('S*');
     clearvars('-except', vars{:});
 end
+
 
