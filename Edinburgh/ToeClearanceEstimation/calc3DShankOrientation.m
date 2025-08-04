@@ -12,15 +12,15 @@ function [euler_angles] = calc3DShankOrientation(s_upp, s_med, s_lat, side)
 N = size(s_upp, 1);
 R_all = zeros(3,3,N);
 
-%% create marker-based frame
+%% create marker-based frame [build the same frame with Vicon]
 for i = 1:N
     if side == 'L'
-        % x-axis, left direction whether the left or right leg
-        X = s_lat(i,:) - s_med(i,:);
-        X = X / norm(X);
+        % z-axis, right direction whether the left or right leg
+        Z = s_med(i,:) - s_lat(i,:); 
+        Z = Z / norm(Z);
     elseif side == 'R'
-        X = s_med(i,:) - s_lat(i,:);
-        X = X / norm(X);
+        Z = s_lat(i,:) - s_med(i,:);
+        Z = Z / norm(Z);
     else
         disp('side value input error');
     end
@@ -28,8 +28,8 @@ for i = 1:N
     % midpoint
     mid_front = (s_med(i,:) + s_lat(i,:)) / 2;
 
-    temp = cross(X, s_upp(i,:) - mid_front); % z-axis, forward direction
-    Z = temp / norm(temp);
+    temp = cross(s_upp(i,:) - mid_front, Z); % x-axis, forward direction
+    X = temp / norm(temp);
     
     % y-axis, upward direction
     Y = cross(Z, X);    
@@ -49,12 +49,12 @@ for i = 1:N
     % rotate Vicon frame to get Marker frame (From_Vicon_to_Marker)
     R_From_Vicon_to_Marker = R_all(:,:,i);
     
-    % convert to euler angles (deg). Don't know why ZXY shows best results
+    % convert to euler angles (deg). X is least likely to cause dead-lock.
+    % Z: flex/ext, X: inversion/eversion, Y: internal/external rotation
     euler_angles(i,:) = rad2deg(rotm2eul(R_From_Vicon_to_Marker, 'ZXY'));
 end
 
-% avoid jumps in angle
+% avoid angle jumps at +-180deg
 euler_angles = unwrap(deg2rad(euler_angles), [], 1) * 180/pi;
 
 end
-
