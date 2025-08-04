@@ -187,3 +187,24 @@ please see the matlab code version at 23-Jul-2025.
 	Validation R2 = 0.9182  
 	Validation Bias = 0.58 mm  
 	Validation 95CI = [-8.55 mm, 9.72 mm]  
+
+6. Test edge case data:  
+   Validation: S1; Train: the first 80% of S2-S10; Test: the last 20%.  
+   Edge Train: 20%-80% of all edge case data; Edge Test: the last 20%; Edge Validation: the first 20%.  
+
+   Train the model using normal data first, and then fine tune the model obtained in the first step using the Edge Train and Edge Test data.  
+   
+Pipeline #1: train the second model without freezing any parameters or layers of the first model, but just decrease the learning rate to 1/50 of its value used in the first training process. The before and after below mean that before and after the fine tuning:
+
+|Types|Train RMSE|Train R2|Train Bias|Train 95CI|Val RMSE|Val R2|Val Bias|Val 95CI|Edge RMSE|Edge R2|Edge Bias|Edge 95CI|
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|Before|2.3554|0.9815|-0.06|[-4.67, 4.56]|4.8271|0.9136|0.52|[-8.88, 9.93]|34.3661|0.5552|-9.12|[-74.06, 55.83]|
+|After|19.1601|-0.2235|6.85|[-28.22, 41.92]|12.5774|0.4137|3.18|[-20.67, 27.03]|34.9673|0.5395|-8.64|[-75.05, 57.77]|
+
+Pipeline #2: train the second model while freezing the first three layers of the first model, any parameters and weights in the first three layers are allowed to be changed (have tested without any freezes to the first model, but achieved considerably worse results, since the first model has been disrupted by the edge case data). the learning rate used in the second training is 1/10 of the previous one.
+
+|Types|Train RMSE|Train R2|Train Bias|Train 95CI|Val RMSE|Val R2|Val Bias|Val 95CI|Edge RMSE|Edge R2|Edge Bias|Edge 95CI|
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|Before|2.3554|0.9815|-0.06|[-4.67, 4.56]|4.8271|0.9136|0.52|[-8.88, 9.93]|34.3661|0.5552|-9.12|[-74.06, 55.83]|
+|After|50.7679|-7.5896|15.62|[-79.05, 110.30]|25.8999|-1.4862|6.03|[-43.34, 55.40]|37.3556|0.4744|-16.94|[-82.20, 48.32]|
+
