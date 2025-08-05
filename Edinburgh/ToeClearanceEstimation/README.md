@@ -94,11 +94,7 @@ please see the matlab code version at 23-Jul-2025.
 1. There is a trend that z axis acc value decreased and the y axis acc value increased when the inclination changed from zero to a non-zero value. And from the perspective of IMU itself, it essentially measures acc in the body frame. If acc in world frame is request, there must be an in-built algorithm embeded in the IMU sensor to transform the coordinate systems for acc data and this transformation must rely on 3D angles (if it is, the IMU should be able to output 3D angles).  
    **So, I think the acc measurement should be represented in the body-based coordinate system. Thereby, 3D angles are still required as input to the model so as to better estimate toe clearance.**
 
-2. It's hard to estimate shoe imu 3D orientation. Even though I can build a foot coordinate frame based on three markers, MTP1, MTP5, as well as Heel, the relation of the marker-based frame with the shoe imu frame cannot be known. I tried to build the marker-baesd frame (x-axis: MTP1-to-MTP5; z-axis: norminal vector of the plane that is constructed using the vector#1 (heel marker to the middle point of MTP1-MTP5) and the vector#2 x-axis; y is obtained from the cross-product of x-axis and z-axis), and calculate the relative orientation angle between this frame and the vicon world frame. And then, transform this relative angle to the IMU original frame, as depicted below.
-
-![Definition of IMU Base Frame and Vicon World Frame](images/Coordinate_Frame.png)
-
-   **Results: The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in** `calc3DIMUOrientation.m`.
+2. **The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in** `calc3DIMUOrientation.m`.
 
 3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:
 
