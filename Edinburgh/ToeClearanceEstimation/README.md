@@ -123,7 +123,7 @@ please see the matlab code version at 23-Jul-2025.
 
 
 
-## to latest
+## to 04-AUg-25
 1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
     Train RMSE = 4.4024 mm  
     Train R2 = 0.9442  
@@ -203,4 +203,9 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 |Before|2.3554|0.9815|-0.06|[-4.67, 4.56]|4.8271|0.9136|0.52|[-8.88, 9.93]|34.3661|0.5552|-9.12|[-74.06, 55.83]|
 |After|50.7679|-7.5896|15.62|[-79.05, 110.30]|25.8999|-1.4862|6.03|[-43.34, 55.40]|37.3556|0.4744|-16.94|[-82.20, 48.32]|
+
+## to latest
+1. Frames involved are redefined as below. Please notice that the processed marker data are obtained by applying a +90deg rotation to the raw marker data around Y-axis in Opensim (frame in Opensim is fixed and will not change). While from the perspective of human body (always facing forward), it means the human body frame rotates -90deg around its original Y-axis (i.e., Opensim Y-axis, or Vicon world Y-axis).
+
+![Frames](images/Frames.png)
 
