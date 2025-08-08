@@ -113,7 +113,7 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 
 
 
-## to 04-AUg-25
+## to latest
 1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
 
 	 	Train RMSE = 4.4024 mm  
@@ -138,7 +138,7 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 	    Validation 95CI = [-9.65 mm, 11.70 mm]  
 
 
-4. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
+3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
 
 	 	Train RMSE = 3.1349 mm  
 	    Train R2 = 0.9672  
@@ -150,7 +150,7 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 	    Validation 95CI = [-9.82 mm, 12.05 mm]  
 
 
-5. Leave-one-subject-out results of each subject as the validation and the remaining nine subjects as the training and test (without including edge case data; using the new version of code [01-Aug-2025]):
+4. Leave-one-subject-out results of each subject as the validation and the remaining nine subjects as the training and test (without including edge case data; using the new version of code [01-Aug-2025]):
 
 |Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -164,21 +164,21 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 |Validation 95CI /mm|[-8.88, 9.93]|[-8.79, 4.90]|[-8.43, 13.30]|[-8.06, 6.29]|[-10.46, 8.39]|[-9.74, 12.32]|[-7.95, 5.84]|[-10.36, 8.56]|[-4.91, 9.83]|[-8.17, 12.13]|
 |Training Duration /min|263|277|174|222|220|264|410|286|203|333|
 
-The foot IMU angles used in the above LOSO test are incorrect due to the uses of absoluate index values in marker column data extraction. Below are results of retest without any changes to the script except using the correct foot angles. All results are improved. Some changes are significant.
+The foot IMU angles used in the above LOSO test are incorrect due to the uses of absoluate index values in marker column data extraction and also frames that were inproperly defined. Frames involved are redefined as presented in file 'Frames' in this repo and angles are re-estimated (have been double checked). Below are the results of LOSO retest without any changes to the script except using the correct foot angles. All results are improved, and some changes are significant.
 
 |Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 |Train RMSE /mm			|1.8878|2.2647|2.0154|2.2316|2.5319|1.9511|2.1039|2.0658|2.5412|2.4696|
-|Train R2				|0.9815|0.9881|0.9864|0.9834|0.9792|0.9810|0.9854|0.9852|0.9786|0.9785|
+|Train R2				|0.9881|0.9826|0.9864|0.9834|0.9792|0.9873|0.9854|0.9852|0.9786|0.9785|
 |Train Bias /mm			|-0.02|-0.16|-0.07|-0.02|0.06|0.01|-0.00|0.04|-0.01|-0.13|
 |Train 95CI /mm			|[-3.72, 3.68]|[-4.59, 4.27]|[-4.02, 3.88]|[-4.39, 4.36]|[-4.90, 5.03]|[-3.82, 3.83]|[-4.13, 4.12]|[-4.01, 4.09]|[-4.99, 4.97]|[-4.97, 4.70]|
 |Validation RMSE /mm	|4.2389|3.5448|4.5685|3.1391|3.8198|3.9789|3.3390|4.7764|3.4994|4.5941|
-|Validation R2			|0.9136|0.9334|0.9241|0.9641|0.9248|0.9458|0.9554|0.9414|0.9543|0.9478|
+|Validation R2			|0.9334|0.9603|0.9241|0.9641|0.9248|0.9458|0.9554|0.9414|0.9543|0.9478|
 |Validation Bias /mm	|-0.27|-1.56|2.07|-0.97|-0.48|1.13|-1.09|-0.96|1.80|1.94|
 |Validation 95CI /mm	|[-8.56, 8.02]|[-7.80, 4.68]|[-5.91, 10.05]|[-6.82, 4.89]|[-7.91, 6.94]|[-6.35, 8.61]|[-7.28, 5.10]|[-10.13, 8.21]|[-4.08, 7.68]|[-6.23, 10.10]|
 |Training Duration /min	|-|-|-|-|-|-|-|-|-|-|
 
-Please note adding `'ExecutionEnvironment', 'auto'` in the `trainingOptions` can considerably increase the training speed (reduced around half of training duration).  
+Please note adding `'ExecutionEnvironment', 'auto'` in the `trainingOptions` can reduce the training duration by half.  
 
 If adding the shank angle as input, the results with S1 as the validation and the remaining for train and test, are as below. Seem get the results worse.   
   
@@ -202,7 +202,7 @@ If adding the shank angle as input, the results with S1 as the validation and th
 		Validation Bias = 0.58 mm  
 		Validation 95CI = [-8.55 mm, 9.72 mm]  
 
-7. Test edge case data:  
+6. Test edge case data:  
    Validation: S1; Train: the first 80% of S2-S10; Test: the last 20%.  
    Edge Train: 20%-80% of all edge case data; Edge Test: the last 20%; Edge Validation: the first 20%.  
 
@@ -221,6 +221,3 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 |Before|2.3554|0.9815|-0.06|[-4.67, 4.56]|4.8271|0.9136|0.52|[-8.88, 9.93]|34.3661|0.5552|-9.12|[-74.06, 55.83]|
 |After|50.7679|-7.5896|15.62|[-79.05, 110.30]|25.8999|-1.4862|6.03|[-43.34, 55.40]|37.3556|0.4744|-16.94|[-82.20, 48.32]|
-
-## to latest
-1. Frames involved are redefined as below. Please notice that the processed marker data are obtained by applying a +90deg rotation to the raw marker data around Y-axis in Opensim (frame in Opensim is fixed and will not change). While from the perspective of human body (always facing forward), it means the human body frame rotates -90deg around its original Y-axis (i.e., Opensim Y-axis, or Vicon world Y-axis). Please see the picture 'Frames' in this repo for visual presentation.
