@@ -164,7 +164,7 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 |Validation 95CI /mm|[-8.88, 9.93]|[-8.79, 4.90]|[-8.43, 13.30]|[-8.06, 6.29]|[-10.46, 8.39]|[-9.74, 12.32]|[-7.95, 5.84]|[-10.36, 8.56]|[-4.91, 9.83]|[-8.17, 12.13]|
 |Training Duration /min|263|277|174|222|220|264|410|286|203|333|
 
-The foot IMU angles used in the above LOSO test are incorrect due to the uses of absoluate index values in marker column data extraction and also frames that were inproperly defined. Frames involved are redefined as presented in file 'Frames' in this repo and angles are re-estimated (have been double checked). Below are the results of LOSO retest without any changes to the script except using the correct foot angles. All results are improved, and some changes are significant.
+The foot IMU angles used in the above LOSO test are incorrect due to the uses of absoluate index values in marker column data extraction and also frames that were inproperly defined. Frames involved are redefined as presented in file 'Frames' in this repo and angles are re-estimated (have been double checked). Below are the results of LOSO retest without any changes to the script except using the correct foot angles (note the both LOSO tests used the non-boolean GRFs data, 0.02 scale_y, and bilstm, mentioned in the next item). All results are improved, and some changes are significant.
 
 |Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -176,20 +176,24 @@ The foot IMU angles used in the above LOSO test are incorrect due to the uses of
 |Validation R2			|0.9334|0.9603|0.9241|0.9641|0.9248|0.9458|0.9554|0.9414|0.9543|0.9478|
 |Validation Bias /mm	|-0.27|-1.56|2.07|-0.97|-0.48|1.13|-1.09|-0.96|1.80|1.94|
 |Validation 95CI /mm	|[-8.56, 8.02]|[-7.80, 4.68]|[-5.91, 10.05]|[-6.82, 4.89]|[-7.91, 6.94]|[-6.35, 8.61]|[-7.28, 5.10]|[-10.13, 8.21]|[-4.08, 7.68]|[-6.23, 10.10]|
-|Training Duration /min	|-|-|-|-|-|-|-|-|-|-|
+|Training Duration /min	| | | | | | | | | | |
 
-Please note adding `'ExecutionEnvironment', 'auto'` in the `trainingOptions` can reduce the training duration by half.  
+Please note adding `'ExecutionEnvironment', 'auto'` in the `trainingOptions` can reduce the training duration by more than half.  
 
-If adding the shank angle as input, the results with S1 as the validation and the remaining for train and test, are as below. Seem get the results worse.   
-  
-		Train RMSE = 2.1685 mm  
-		Train R2 = 0.9843   
-		Train Bias = -0.10 mm  
-		Train 95CI = [-4.35 mm, 4.15 mm]  
-		Validation RMSE = 4.9081 mm  
-		Validation R2 = 0.9107    
-		Validation Bias = -1.80 mm  
-		Validation 95CI = [-10.75 mm, 7.16 mm]  
+If adding the shank angle into the input. Seem get the results worse.   
+
+|Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|Train RMSE /mm			|2.1685| | | | | | | | |2.1951|
+|Train R2				|0.9843| | | | | | | | |0.9830|
+|Train Bias /mm			|-0.10| | | | | | | | |0.02|
+|Train 95CI /mm			|[-4.35, 4.15]| | | | | | | | |[-4.29, 4.32]|
+|Validation RMSE /mm	|4.9081| | | | | | | | |5.5249|
+|Validation R2			|0.9107| | | | | | | | |0.9245|
+|Validation Bias /mm	|-1.80| | | | | | | | |3.16|
+|Validation 95CI /mm	|[-10.75, 7.16]| | | | | | | | |[-5.72, 12.04]|
+|Training Duration /min	| | | | | | | | | | |
+
 
 5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:
 
