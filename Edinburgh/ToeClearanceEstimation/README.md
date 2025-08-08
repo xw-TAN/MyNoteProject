@@ -2,8 +2,7 @@
 
 
 ## to 14-Jul-2025
-1. These are some information missing in the `.mat` dataset, such as `hs_r_time`，`shokac_starting_time`, `time_diff`, and `Timesteps`, which are necessary in the model training. So, a script, `DataExtraProcessing_xwt.m`, was write to supplement these information into the old dataset.  
-    But, note that there are two files in the folder `S1-->ShoeData` that have a wrong name, misspelled 'in' as 'n'. Thus, the script prompts errors when processing the two files. Just revise the name and the script will be ok to these files.
+1. These are some information missing in the `.mat` dataset, such as `hs_r_time`，`shokac_starting_time`, `time_diff`, and `Timesteps`, which are necessary in the model training. So, a script, `DataExtraProcessing_xwt.m`, was write to supplement these information into the old dataset. But, note that there are two files in the folder `S1-->ShoeData` that have a wrong name, misspelled 'in' as 'n'. Thus, the script prompts errors when processing the two files. Just revise the name and the script will be ok to these files.
 
 2. Some changes were made to the script `ReadingShoeDataTrainingModels_Xiaowei.m`, the result convergence can be achieved, but some fine tuning is still required, and I will try some different model parameters these days. There are some notes about the script (not the all, see the new script for all changes please):
 
@@ -30,13 +29,11 @@
   - 2.5  
     I don't know the meaning of `masked_data`. Only S1 dataset has the `masked_data` (all elements are value `1`), and I cannot parse it. So, I cannot supplement this information into the other subjests' dataset using the customized script `DataExtraProcessing_xwt.m`. So, I just removed it during the training process.
 
-3. These may be some more directly related information connected with the toe clearance, such as the placement position of IMU, foot length, acc, gyro, and foot orientation angles. These information may help improve the model accuracy. I do not know if the foot pressure under the thumb, little, and heel has relations with the toe clearance.  
-   Morever, the pipelien of using Pedestrian Dead Reckoning (PDR) and Zero Velocity Update (ZUPT) algorithms can estimate the 3D position and 3D orientation of the IMU placed on the human foot, using only one IMU sensor. But, it just estimates the 6D trajectory of the IMU, not exactly the information of the toe segment.
+3. These may be some more directly related information connected with the toe clearance, such as the placement position of IMU, foot length, acc, gyro, and foot orientation angles. These information may help improve the model accuracy. I do not know if the foot pressure under the thumb, little, and heel has relations with the toe clearance. Morever, the pipelien of using Pedestrian Dead Reckoning (PDR) and Zero Velocity Update (ZUPT) algorithms can estimate the 3D position and 3D orientation of the IMU placed on the human foot, using only one IMU sensor. But, it just estimates the 6D trajectory of the IMU, not exactly the information of the toe segment.
 
 
 ## to 22-Jul-2025
-1. The most relevant info to estimate toe clearance includes: (1) 3D foot orientation angle, (2) 3D linear acceleration, (3) absoluate time (for integral), (4) foot length and the position of IMU on the foot, and (5) treadmill inclination.  
-   Thinking that the treadmill speed or walking on a treadmill only has an impact on the foot position estimation on the treadmill surface plane (left-right, forward-backward), which means that the toe clearance will not be affected by the treadmill speed itself.
+1. The most relevant info to estimate toe clearance includes: (1) 3D foot orientation angle, (2) 3D linear acceleration, (3) absoluate time (for integral), (4) foot length and the position of IMU on the foot, and (5) treadmill inclination. Thinking that the treadmill speed or walking on a treadmill only has an impact on the foot position estimation on the treadmill surface plane (left-right, forward-backward), which means that the toe clearance will not be affected by the treadmill speed itself.
 
 2. I checked the time alignment between GRF and shoe data. They are mostly aligned, but the shoe data are a little instable.
 
@@ -71,17 +68,12 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 12. Verify the correctness of the baseline toe clearance.  
     **Reply**: The current baseline toe clearances are correct, the difference in lowest value from different subjects is due to the deformation of the shoe becuase of different weight of subjects.
 
-
 13. 3d angle data are necessary, especially when the acc data are presented in the body coordiante system; otherwise, the 3d angle data are not required here. (at least that there are 3d angle or grf data to help distinguish the stance or swing phase so as to know when the toe clearance is zero.)  
     **Reply**: Not sure the frame that the acc data are represented in. We don't have 3d angle data currently from shoe. just a try of creating a new model, whose inputs are shoe data and outputs are the 3d angle data culculated from marker data. double models.
 
 14. The gyro data from different axes have the same value. It is the fault of the sensor itself. But the 3d gyro data, or angle data, are pretty necessary to transform the acc data from the body frame to the global frame.
 
-**The latest results are as follows:**
 
-please see the matlab code version at 23-Jul-2025.
-
-![TraningResults](images/TrainResults_22Jul25.png)
 
 **Next Steps:**  
 1. try to reduce offset in grf data to make them more accurate, so we expect that the model can learn some infor from the accurate grf.
@@ -96,71 +88,69 @@ please see the matlab code version at 23-Jul-2025.
 
 2. **The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in** `calc3DIMUOrientation.m`.
 
-3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:
+3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:  
+ 
+	   Train RMSE = 3.2271 mm  
+	   Train R2 = 0.9653  
+	   Train Bias = -0.05 mm  
+	   Train 95CI = [-6.37 mm, 6.28 mm]  
+	   Validation RMSE = 5.8550 mm  
+	   Validation R2 = 0.8731  
+	   Validation Bias = 0.73 mm  
+	   Validation 95CI = [-10.65 mm, 12.12 mm]
 
-   Train RMSE = 3.2271 mm  
-   Train R2 = 0.9653  
-   Train Bias = -0.05 mm  
-   Train 95CI = [-6.37 mm, 6.28 mm]  
-   Validation RMSE = 5.8550 mm  
-   Validation R2 = 0.8731  
-   Validation Bias = 0.73 mm  
-   Validation 95CI = [-10.65 mm, 12.12 mm]
 
-![TraningResults](images/TrainResults_29Jul25.png)
-
-4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows:  
-    Train RMSE = 4.0920 mm  
-    Train R2 = 0.9460  
-    Train Bias = -0.20 mm  
-    Train LoA = [-8.21 mm, 7.81 mm]  
-    Validation RMSE = 6.2310 mm  
-    Validation R2 = 0.8737  
-    Validation Bias = -0.25 mm  
-    Validation LoA = [-12.45 mm, 11.96 mm]  
-
-![TraningResults](images/TrainResults_31Jul25_03.png)
+4. Both side of data were used, so the amount of dataset has doubled, results (the same configuration with above) are as follows:
+ 
+	    Train RMSE = 4.0920 mm  
+	    Train R2 = 0.9460  
+	    Train Bias = -0.20 mm  
+	    Train LoA = [-8.21 mm, 7.81 mm]  
+	    Validation RMSE = 6.2310 mm  
+	    Validation R2 = 0.8737  
+	    Validation Bias = -0.25 mm  
+	    Validation LoA = [-12.45 mm, 11.96 mm]  
 
 
 
 ## to 04-AUg-25
 1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
-    Train RMSE = 4.4024 mm  
-    Train R2 = 0.9442  
-    Train Bias = -0.04 mm  
-    Train LoA = [-8.67 mm, 8.59 mm]  
-    Validation RMSE = 7.5906 mm  
-    Validation R2 = 0.7867  
-    Validation Bias = 1.08 mm  
-    Validation LoA = [-13.64 mm, 15.81 mm]
 
-![TraningResults](images/TrainResults_30Jul25.png)
+	 	Train RMSE = 4.4024 mm  
+	    Train R2 = 0.9442  
+	    Train Bias = -0.04 mm  
+	    Train LoA = [-8.67 mm, 8.59 mm]  
+	    Validation RMSE = 7.5906 mm  
+	    Validation R2 = 0.7867  
+	    Validation Bias = 1.08 mm  
+	    Validation LoA = [-13.64 mm, 15.81 mm]
 
-2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:  
-    Train RMSE = 3.0697 mm  
-    Train R2 = 0.9686  
-    Train Bias = -0.07 mm  
-    Train 95CI = [-6.09 mm, 5.94 mm]  
-    Validation RMSE = 5.5402 mm  
-    Validation R2 = 0.8862  
-    Validation Bias = 1.02 mm  
-    Validation 95CI = [-9.65 mm, 11.70 mm]  
 
-![TraningResults](images/TrainResults_31Jul25.png)
+2. Using the calibrated shoe grf (zero the forces during swing phase) as the model input (real value, not logic value; without edge case data), obtains the results as follows:
+ 
+	    Train RMSE = 3.0697 mm  
+	    Train R2 = 0.9686  
+	    Train Bias = -0.07 mm  
+	    Train 95CI = [-6.09 mm, 5.94 mm]  
+	    Validation RMSE = 5.5402 mm  
+	    Validation R2 = 0.8862  
+	    Validation Bias = 1.02 mm  
+	    Validation 95CI = [-9.65 mm, 11.70 mm]  
 
-3. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
-    Train RMSE = 3.1349 mm  
-    Train R2 = 0.9672  
-    Train Bias = -0.02 mm  
-    Train 95CI = [-6.16 mm, 6.12 mm]  
-    Validation RMSE = 5.6893 mm  
-    Validation R2 = 0.8800  
-    Validation Bias = 1.12 mm  
-    Validation 95CI = [-9.82 mm, 12.05 mm]  
 
-![TraningResults](images/TrainResults_31Jul25_02.png)
+4. the same configuration with the above, only the calibrated shoe grfs are converted into logic values (0.5N or 0.5Nm threshold):  
 
-4. Leave-one-subject-out results of each subject as the validation and the remaining nine subjects as the training and test (without including edge case data; using the new version of code [01-Aug-2025]):
+	 	Train RMSE = 3.1349 mm  
+	    Train R2 = 0.9672  
+	    Train Bias = -0.02 mm  
+	    Train 95CI = [-6.16 mm, 6.12 mm]  
+	    Validation RMSE = 5.6893 mm  
+	    Validation R2 = 0.8800  
+	    Validation Bias = 1.12 mm  
+	    Validation 95CI = [-9.82 mm, 12.05 mm]  
+
+
+5. Leave-one-subject-out results of each subject as the validation and the remaining nine subjects as the training and test (without including edge case data; using the new version of code [01-Aug-2025]):
 
 |Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -174,17 +164,45 @@ please see the matlab code version at 23-Jul-2025.
 |Validation 95CI /mm|[-8.88, 9.93]|[-8.79, 4.90]|[-8.43, 13.30]|[-8.06, 6.29]|[-10.46, 8.39]|[-9.74, 12.32]|[-7.95, 5.84]|[-10.36, 8.56]|[-4.91, 9.83]|[-8.17, 12.13]|
 |Training Duration /min|263|277|174|222|220|264|410|286|203|333|
 
-5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:  
-	Train RMSE = 2.2845 mm  
-	Train R2 = ...  
-	Train Bias = ...  
-	Train 95CI = ...  
-	Validation RMSE = 4.6970 mm  
-	Validation R2 = 0.9182  
-	Validation Bias = 0.58 mm  
-	Validation 95CI = [-8.55 mm, 9.72 mm]  
+The foot IMU angles used in the above LOSO test are incorrect due to the uses of absoluate index values in marker column data extraction. Below are results of retest without any changes to the script except using the correct foot angles. All results are improved. Some changes are significant.
 
-6. Test edge case data:  
+|Validation Subject|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|Train RMSE /mm			|1.8878|2.2647|2.0154|2.2316|2.5319|1.9511|2.1039|2.0658|2.5412|2.4696|
+|Train R2				|0.9815|0.9881|0.9864|0.9834|0.9792|0.9810|0.9854|0.9852|0.9786|0.9785|
+|Train Bias /mm			|-0.02|-0.16|-0.07|-0.02|0.06|0.01|-0.00|0.04|-0.01|-0.13|
+|Train 95CI /mm			|[-3.72, 3.68]|[-4.59, 4.27]|[-4.02, 3.88]|[-4.39, 4.36]|[-4.90, 5.03]|[-3.82, 3.83]|[-4.13, 4.12]|[-4.01, 4.09]|[-4.99, 4.97]|[-4.97, 4.70]|
+|Validation RMSE /mm	|4.2389|3.5448|4.5685|3.1391|3.8198|3.9789|3.3390|4.7764|3.4994|4.5941|
+|Validation R2			|0.9136|0.9334|0.9241|0.9641|0.9248|0.9458|0.9554|0.9414|0.9543|0.9478|
+|Validation Bias /mm	|-0.27|-1.56|2.07|-0.97|-0.48|1.13|-1.09|-0.96|1.80|1.94|
+|Validation 95CI /mm	|[-8.56, 8.02]|[-7.80, 4.68]|[-5.91, 10.05]|[-6.82, 4.89]|[-7.91, 6.94]|[-6.35, 8.61]|[-7.28, 5.10]|[-10.13, 8.21]|[-4.08, 7.68]|[-6.23, 10.10]|
+|Training Duration /min	|-|-|-|-|-|-|-|-|-|-|
+
+Please note adding `'ExecutionEnvironment', 'auto'` in the `trainingOptions` can considerably increase the training speed (reduced around half of training duration).  
+
+If adding the shank angle as input, the results with S1 as the validation and the remaining for train and test, are as below. Seem get the results worse.   
+  
+		Train RMSE = 2.1685 mm  
+		Train R2 = 0.9843   
+		Train Bias = -0.10 mm  
+		Train 95CI = [-4.35 mm, 4.15 mm]  
+		Validation RMSE = 4.9081 mm  
+		Validation R2 = 0.9107    
+		Validation Bias = -1.80 mm  
+		Validation 95CI = [-10.75 mm, 7.16 mm]  
+
+5. Changing the scale_y to 0.02, adding the magnitude of the Shokac GRFs in the training (not just the booleans), and making the first layer of the network a 'bilstm' layer:
+
+		Train RMSE = 2.2845 mm  
+		Train R2 = ...  
+		Train Bias = ...  
+		Train 95CI = ...  
+		Validation RMSE = 4.6970 mm  
+		Validation R2 = 0.9182  
+		Validation Bias = 0.58 mm  
+		Validation 95CI = [-8.55 mm, 9.72 mm]  
+
+7. Test edge case data:  
    Validation: S1; Train: the first 80% of S2-S10; Test: the last 20%.  
    Edge Train: 20%-80% of all edge case data; Edge Test: the last 20%; Edge Validation: the first 20%.  
 
@@ -205,7 +223,4 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |After|50.7679|-7.5896|15.62|[-79.05, 110.30]|25.8999|-1.4862|6.03|[-43.34, 55.40]|37.3556|0.4744|-16.94|[-82.20, 48.32]|
 
 ## to latest
-1. Frames involved are redefined as below. Please notice that the processed marker data are obtained by applying a +90deg rotation to the raw marker data around Y-axis in Opensim (frame in Opensim is fixed and will not change). While from the perspective of human body (always facing forward), it means the human body frame rotates -90deg around its original Y-axis (i.e., Opensim Y-axis, or Vicon world Y-axis).
-
-![Frames](images/Frames.png)
-
+1. Frames involved are redefined as below. Please notice that the processed marker data are obtained by applying a +90deg rotation to the raw marker data around Y-axis in Opensim (frame in Opensim is fixed and will not change). While from the perspective of human body (always facing forward), it means the human body frame rotates -90deg around its original Y-axis (i.e., Opensim Y-axis, or Vicon world Y-axis). Please see the picture 'Frames' in this repo for visual presentation.
