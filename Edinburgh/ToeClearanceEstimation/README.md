@@ -227,22 +227,23 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |After|50.7679|-7.5896|15.62|[-79.05, 110.30]|25.8999|-1.4862|6.03|[-43.34, 55.40]|37.3556|0.4744|-16.94|[-82.20, 48.32]|
 
 
-7. Test results under various conditions
+7. Test results under various configurations
 
-|Condition|A|A|A|A|B| | | |
+|Condition|A|A|A|A|B|C|C| |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|
-|V-Subject	|S1|S3|S5|S7|S1| | | |
-|T-RMSE /mm	|2.2411|2.0813|2.0372|2.5285|2.1984| | | |
-|T-R2		|0.9833|0.9855|0.9865|0.9789|0.9839| | | |
-|T-Bias /mm	|0.02|-0.08|-0.13|-0.14|-0.00| | | |
-|T-95CI /mm	|[-4.37, 4.42]|[-4.15, 4.00]|[-4.11, 3.86]|[-5.09, 4.81]|[-4.31, 4.31]| | | |
-|V-RMSE /mm	|4.5559|4.7148|3.6599|3.7455|4.4249| | | |
-|V-R2		|0.9231|0.9192|0.9310|0.9439|0.9274| | | |
-|V-Bias /mm	|-0.63|2.33|-0.56|-1.15|-0.10| | | |
-|V-95CI /mm	|[-9.47, 8.21]|[-5.71, 10.36]|[-7.65, 6.53]|[-8.14, 5.83]|[-8.77, 8.58]| | | |
+|V-Subject	|S1|S3|S5|S7|S1|S1|S10| |
+|T-RMSE /mm	|2.2411|2.0813|2.0372|2.5285|2.1984|2.3289|2.6756| |
+|T-R2		|0.9833|0.9855|0.9865|0.9789|0.9839|0.9819|0.9748| |
+|T-Bias /mm	|0.02|-0.08|-0.13|-0.14|-0.00|-0.07|-0.03| |
+|T-95CI /mm	|[-4.37, 4.42]|[-4.15, 4.00]|[-4.11, 3.86]|[-5.09, 4.81]|[-4.31, 4.31]|[-4.63, 4.49]|[-5.27, 5.22]| |
+|V-RMSE /mm	|4.5559|4.7148|3.6599|3.7455|4.4249|5.0858|4.9275| |
+|V-R2		|0.9231|0.9192|0.9310|0.9439|0.9274|0.9041|0.9400| |
+|V-Bias /mm	|-0.63|2.33|-0.56|-1.15|-0.10|-0.41|1.62| |
+|V-95CI /mm	|[-9.47, 8.21]|[-5.71, 10.36]|[-7.65, 6.53]|[-8.14, 5.83]|[-8.77, 8.58]|[-10.35, 9.53]|[-7.50, 10.74]| |
 
 	- A: added masked_data
 	- B: added logical phase index (1-stance, 0-swing)
+ 	- C: normalized time, shoe grf, acc, gyro, inc, shoe size 
 
 
 |Condition|A|B|C|D|E|F|G|
@@ -257,10 +258,10 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |V-Bias /mm	|1.02|-0.63|-0.29|-0.22|-0.06|-0.40|-0.96|
 |V-95CI /mm	|[-14.48, 16.52]|[-9.13, 7.87]|[-9.05, 8.47]|[-8.53, 8.09]|[-8.84, 8.72]|[-8.96, 8.16]|[-10.03, 8.11]|
 
-	- A: added masked_data, added body weight, changed shoe size from 40 and 42 to 250mm and 263mm, initial value of time series wasn't subtracted
+	- A: added masked_data, added body weight, changed shoe length to 250mm (40) and 263mm (42), initial value of time series wasn't subtracted
 	- B: A - time series changes
  	- C: B - body weight
-  	- D: C - masked_data, normalize time series (0-1)
+  	- D: C - masked_data + normalize time series (0-1)
     - E: C - masked_data
 	- F: changed shoe size from 40 and 42 to 285mm and 300mm (measured from STL files)
  	- G: changed `step_between_points` from `window/10` to `round(window/8)`
@@ -278,7 +279,7 @@ Pipeline #2: train the second model while freezing the first three layers of the
 |V-95CI /mm	|[-9.97, 8.86]|[-8.56, 8.02]|[-9.06, 8.72]|[-9.98, 9.30]|[-8.73, 8.09]| | |
 
 	- A: changed `L2Regularization` from 1e-4 to 9e-4 (to mitigate over-fitting)
-	- B: changed `L2Regularization` from 1e-4 to 5e-4 (to mitigate over-fitting)
- 	- C: B + changed `dropoutLayer1` from 0.2 to 0.3 (to mitigate over-fitting)
+	- B: changed `L2Regularization` to 5e-4
+ 	- C: B + changed `dropoutLayer1` from 0.2 to 0.3
   	- D: `dropoutLayer1` 0.25, `L2Regularization` 2e-4
    	- E: numHiddenUnits1 = numFeatures*4; numHiddenUnits2 = numFeatures*2; mini_batch_size=256; 'ValidationPatience', 15;
