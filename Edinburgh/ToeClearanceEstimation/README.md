@@ -267,21 +267,165 @@ Pipeline #2: train the second model while freezing the first three layers of the
 	- F: changed shoe size from 40 and 42 to 285mm and 300mm (measured from STL files)
  	- G: changed `step_between_points` from `window/10` to `round(window/8)`
 
- |Condition|A|B|C|D|E|F| |
+ |Condition|A|B|C|D|E|F|G|
 |:---|---:|---:|---:|---:|---:|---:|---:|
-|V-Subject	|S1|S1|S1|S1|S1|S1| |
-|T-RMSE /mm	|2.5629|1.8878|2.2829|2.4184|1.8542|2.3069| |
-|T-R2		|0.9781|0.9881|0.9826|0.9805|0.9885|0.9823| |
-|T-Bias /mm	|-0.08|-0.02|-0.07|0.28|-0.08|0.03| |
-|T-95CI /mm	|[-5.10, 4.94]|[-3.72, 3.68]|[-4.54, 4.40]|[-4.43, 4.99]|[-3.71, 3.55]|[-4.49, 4.55]| |
-|V-RMSE /mm	|4.8336|4.2389|4.5388|4.9301|4.3035|4.6680| |
-|V-R2		|0.9134|0.9334|0.9236|0.9099|0.9314|0.9192| |
-|V-Bias /mm	|-0.55|-0.27|-0.17|-0.34|-0.32|-0.10| |
-|V-95CI /mm	|[-9.97, 8.86]|[-8.56, 8.02]|[-9.06, 8.72]|[-9.98, 9.30]|[-8.73, 8.09]|[-9.24, 9.05]| |
+|V-Subject	|S1|S1|S1|S1|S1|S1|S1|
+|T-RMSE /mm	|2.5629|1.8878|2.2829|2.4184|1.8542|2.3069|1.7358|
+|T-R2		|0.9781|0.9881|0.9826|0.9805|0.9885|0.9823|0.9900|
+|T-Bias /mm	|-0.08|-0.02|-0.07|0.28|-0.08|0.03|0.09|
+|T-95CI /mm	|[-5.10, 4.94]|[-3.72, 3.68]|[-4.54, 4.40]|[-4.43, 4.99]|[-3.71, 3.55]|[-4.49, 4.55]|[-3.31, 3.49]|
+|V-RMSE /mm	|4.8336|4.2389|4.5388|4.9301|4.3035|4.6680|3.7652|
+|V-R2		|0.9134|0.9334|0.9236|0.9099|0.9314|0.9192|0.9475|
+|V-Bias /mm	|-0.55|-0.27|-0.17|-0.34|-0.32|-0.10|0.05|
+|V-95CI /mm	|[-9.97, 8.86]|[-8.56, 8.02]|[-9.06, 8.72]|[-9.98, 9.30]|[-8.73, 8.09]|[-9.24, 9.05]|[-7.33, 7.43]|
 
 	- A: changed `L2Regularization` from 1e-4 to 9e-4 (to mitigate over-fitting)
 	- B: changed `L2Regularization` to 5e-4
  	- C: B + changed `dropoutLayer1` from 0.2 to 0.3
-  	- D: `dropoutLayer1` 0.25, `L2Regularization` 2e-4
+  	- D: `dropoutLayer1` 0.25, `L2Regularization` 2e-4 
    	- E: numHiddenUnits1 = numFeatures*4; numHiddenUnits2 = numFeatures*2; mini_batch_size=256; 'ValidationPatience', 15;
 	- F: removed logical shoe GRF values
+ 	- G: changed model parameters as follows:
+  ```matlab
+% changed to two-layer network, added geluLayer.
+layers = [
+    sequenceInputLayer(numFeatures) % input layer
+    bilstmLayer(numFeatures*6, 'OutputMode', 'sequence')  % 1st layer
+    batchNormalizationLayer
+    geluLayer
+    dropoutLayer(0.15)
+
+    lstmLayer(numFeatures*3, 'OutputMode', 'sequence')  % 2nd layer
+    batchNormalizationLayer
+    geluLayer
+    dropoutLayer(0.15)
+
+    fullyConnectedLayer(numResponses) % output layer
+    regressionLayer
+    ];
+
+options = trainingOptions('adam',...
+    'ValidationData',{x_test, y_test},...
+    'ValidationPatience', 12,.. % changed
+    'MiniBatchSize', mini_batch_size,...
+    'MaxEpochs', NEpoch, ...
+    'InitialLearnRate', LearningRate, ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropPeriod', 4, ... % changed
+    'LearnRateDropFactor', 0.6, ... % changed
+    'GradientThreshold', 1, ... % added
+    'L2Regularization', 1e-4, ...
+    'Shuffle', shuffle, ...
+    'Verbose', false, ...
+    'Plots', 'training-progress',...
+    'ExecutionEnvironment', 'auto');
+  ```
+
+ |Condition|A|B| | | | | |
+|:---|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|S1|S1| | | | | |
+|T-RMSE /mm	|1.9459|4.3397| | | | | |
+|T-R2		|0.9874|0.9372| | | | | |
+|T-Bias /mm	|-0.28|-0.44| | | | | |
+|T-95CI /mm	|[-4.06, 3.49]|[-8.90, 8.02]| | | | | |
+|V-RMSE /mm	|3.9014|6.1124| | | | | |
+|V-R2		|0.9436|0.8615| | | | | |
+|V-Bias /mm	|-0.51|-0.37| | | | | |
+|V-95CI /mm	|[-8.09, 7.07]|[-12.33, 11.59]| | | | | |
+
+	- A: changed model parameters as follows (out1 = bilstm; out2 = lstm; out2 = out1 + out2):
+ ```matlab
+layers = [
+    sequenceInputLayer(numFeatures, 'Name', 'input') % Input layer
+    bilstmLayer(numFeatures*6, 'OutputMode', 'sequence', 'Name', 'bilstm') % 1st layer
+    batchNormalizationLayer('Name', 'bn1')
+    geluLayer('Name', 'gelu1')
+    dropoutLayer(0.15, 'Name', 'dropout1')
+
+    lstmLayer(numFeatures*3, 'OutputMode', 'sequence', 'Name', 'lstm') % 2nd layer
+    batchNormalizationLayer('Name', 'bn2')
+    geluLayer('Name', 'gelu2')
+    dropoutLayer(0.15, 'Name', 'dropout2')
+    fullyConnectedLayer(numFeatures*12, 'Name', 'fc_lstm') % Adjust dimension to match BiLSTM
+
+    additionLayer(2, 'Name', 'add') % Residual connection (two inputs), place here to add the output of above, i.e., out2
+    batchNormalizationLayer('Name', 'bn3')
+    geluLayer('Name', 'gelu3')
+
+    fullyConnectedLayer(numResponses, 'Name', 'fc_output') % Output layer
+    regressionLayer('Name', 'output')
+];
+
+% Create layer graph
+lgraph = layerGraph(layers);
+% Add residual connection from bilstm to additionLayer
+lgraph = connectLayers(lgraph, 'bilstm', 'add/in2'); % to add out1
+
+% Training options (unchanged)
+options = trainingOptions('adam', ...
+    'ValidationData', {x_test, y_test}, ...
+    'ValidationPatience', 12, ...
+    'MiniBatchSize', mini_batch_size, ...
+    'MaxEpochs', NEpoch, ...
+    'InitialLearnRate', LearningRate, ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropPeriod', 4, ...
+    'LearnRateDropFactor', 0.6, ...
+    'GradientThreshold', 1, ...
+    'L2Regularization', 1e-4, ...
+    'Shuffle', shuffle, ...
+    'Verbose', false, ...
+    'Plots', 'training-progress', ...
+    'ExecutionEnvironment', 'auto');
+
+% Train the network
+[net, info] = trainNetwork(x_train, y_train, lgraph, options);
+```
+
+ 	- B: changed model parameters as follows (out1 = bilstm; out2 = out1 + inputs):
+ ```matlab
+layers = [
+    sequenceInputLayer(numFeatures, 'Name', 'input') % Input layer
+    fullyConnectedLayer(numFeatures*12, 'Name', 'fc_input') % Adjust input dimension to match BiLSTM
+    
+    bilstmLayer(numFeatures*6, 'OutputMode', 'sequence', 'Name', 'bilstm') % BiLSTM layer
+    
+    additionLayer(2, 'Name', 'add') % Residual connection (two inputs), place here to add the output of above, i.e., out1
+    batchNormalizationLayer('Name', 'bn1')
+    geluLayer('Name', 'gelu1')
+    dropoutLayer(0.15, 'Name', 'dropout1')
+
+    lstmLayer(numFeatures*3, 'OutputMode', 'sequence', 'Name', 'lstm') % LSTM layer
+    batchNormalizationLayer('Name', 'bn2')
+    geluLayer('Name', 'gelu2')
+    dropoutLayer(0.15, 'Name', 'dropout2')
+
+    fullyConnectedLayer(numResponses, 'Name', 'fc_output') % Output layer
+    regressionLayer('Name', 'output')
+];
+
+% Create layer graph
+lgraph = layerGraph(layers);
+% Add residual connection from input to additionLayer
+lgraph = connectLayers(lgraph, 'fc_input', 'add/in2'); % add the modified input that has the same size structure
+
+% Training options (unchanged)
+options = trainingOptions('adam', ...
+    'ValidationData', {x_test, y_test}, ...
+    'ValidationPatience', 12, ...
+    'MiniBatchSize', mini_batch_size, ...
+    'MaxEpochs', NEpoch, ...
+    'InitialLearnRate', LearningRate, ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropPeriod', 4, ...
+    'LearnRateDropFactor', 0.6, ...
+    'GradientThreshold', 1, ...
+    'L2Regularization', 1e-4, ...
+    'Shuffle', shuffle, ...
+    'Verbose', false, ...
+    'Plots', 'training-progress', ...
+    'ExecutionEnvironment', 'auto');
+
+% Train the network
+[net, info] = trainNetwork(x_train, y_train, lgraph, options);
+```
