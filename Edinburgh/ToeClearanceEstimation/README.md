@@ -267,17 +267,17 @@ Pipeline #2: train the second model while freezing the first three layers of the
 	- F: changed shoe size from 40 and 42 to 285mm and 300mm (measured from STL files)
  	- G: changed `step_between_points` from `window/10` to `round(window/8)`
 
- |Condition|A|B|C|D|E|F|G|
+ |Condition|A|B|C|D|E|F| |
 |:---|---:|---:|---:|---:|---:|---:|---:|
-|V-Subject	|S1|S1|S1|S1|S1|S1|S1|
-|T-RMSE /mm	|2.5629|1.8878|2.2829|2.4184|1.8542|2.3069|1.7358|
-|T-R2		|0.9781|0.9881|0.9826|0.9805|0.9885|0.9823|0.9900|
-|T-Bias /mm	|-0.08|-0.02|-0.07|0.28|-0.08|0.03|0.09|
-|T-95CI /mm	|[-5.10, 4.94]|[-3.72, 3.68]|[-4.54, 4.40]|[-4.43, 4.99]|[-3.71, 3.55]|[-4.49, 4.55]|[-3.31, 3.49]|
-|V-RMSE /mm	|4.8336|4.2389|4.5388|4.9301|4.3035|4.6680|3.7652|
-|V-R2		|0.9134|0.9334|0.9236|0.9099|0.9314|0.9192|0.9475|
-|V-Bias /mm	|-0.55|-0.27|-0.17|-0.34|-0.32|-0.10|0.05|
-|V-95CI /mm	|[-9.97, 8.86]|[-8.56, 8.02]|[-9.06, 8.72]|[-9.98, 9.30]|[-8.73, 8.09]|[-9.24, 9.05]|[-7.33, 7.43]|
+|V-Subject	|S1|S1|S1|S1|S1|S1| |
+|T-RMSE /mm	|2.5629|1.8878|2.2829|2.4184|1.8542|2.3069| |
+|T-R2		|0.9781|0.9881|0.9826|0.9805|0.9885|0.9823| |
+|T-Bias /mm	|-0.08|-0.02|-0.07|0.28|-0.08|0.03| |
+|T-95CI /mm	|[-5.10, 4.94]|[-3.72, 3.68]|[-4.54, 4.40]|[-4.43, 4.99]|[-3.71, 3.55]|[-4.49, 4.55]| |
+|V-RMSE /mm	|4.8336|4.2389|4.5388|4.9301|4.3035|4.6680| |
+|V-R2		|0.9134|0.9334|0.9236|0.9099|0.9314|0.9192| |
+|V-Bias /mm	|-0.55|-0.27|-0.17|-0.34|-0.32|-0.10| |
+|V-95CI /mm	|[-9.97, 8.86]|[-8.56, 8.02]|[-9.06, 8.72]|[-9.98, 9.30]|[-8.73, 8.09]|[-9.24, 9.05]| |
 
 	- A: changed `L2Regularization` from 1e-4 to 9e-4 (to mitigate over-fitting)
 	- B: changed `L2Regularization` to 5e-4
@@ -285,7 +285,20 @@ Pipeline #2: train the second model while freezing the first three layers of the
   	- D: `dropoutLayer1` 0.25, `L2Regularization` 2e-4 
    	- E: numHiddenUnits1 = numFeatures*4; numHiddenUnits2 = numFeatures*2; mini_batch_size=256; 'ValidationPatience', 15;
 	- F: removed logical shoe GRF values
- 	- G: changed model parameters as follows:
+
+ |Condition|A|A|A|A|A|B|C|
+|:---|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|S1|S3|S5|S7|S9|S1|S1|
+|T-RMSE /mm	|1.7358|1.9225|2.0063|2.0070|1.5938|1.9459|4.3397|
+|T-R2		|0.9900|0.9877|0.9869|0.9867|0.9916|0.9874|0.9372|
+|T-Bias /mm	|0.09|-0.08|0.14|0.15|0.20|-0.28|-0.44|
+|T-95CI /mm	|[-3.31, 3.49]|[-3.85, 3.68]|[-3.78, 4.06]|[-3.77, 4.07]|[-2.90, 3.30]|[-4.06, 3.49]|[-8.90, 8.02]|
+|V-RMSE /mm	|3.7652|4.9587|3.0674|3.0935|3.5234|3.9014|6.1124|
+|V-R2		|0.9475|0.9106|0.9515|0.9618|0.9537|0.9436|0.8615|
+|V-Bias /mm	|0.05|2.02|-0.37|-0.52|2.04|-0.51|-0.37|
+|V-95CI /mm	|[-7.33, 7.43]|[-6.86, 10.90]|[-6.34, 5.60]|[-6.50, 5.45]|[-3.60, 7.67]|[-8.09, 7.07]|[-12.33, 11.59]|
+
+	- A: changed model parameters as follows (added GELU):
   ```matlab
 % changed to two-layer network, added geluLayer.
 layers = [
@@ -321,19 +334,7 @@ options = trainingOptions('adam',...
     'ExecutionEnvironment', 'auto');
   ```
 
- |Condition|A|B| | | | | |
-|:---|---:|---:|---:|---:|---:|---:|---:|
-|V-Subject	|S1|S1| | | | | |
-|T-RMSE /mm	|1.9459|4.3397| | | | | |
-|T-R2		|0.9874|0.9372| | | | | |
-|T-Bias /mm	|-0.28|-0.44| | | | | |
-|T-95CI /mm	|[-4.06, 3.49]|[-8.90, 8.02]| | | | | |
-|V-RMSE /mm	|3.9014|6.1124| | | | | |
-|V-R2		|0.9436|0.8615| | | | | |
-|V-Bias /mm	|-0.51|-0.37| | | | | |
-|V-95CI /mm	|[-8.09, 7.07]|[-12.33, 11.59]| | | | | |
-
-	- A: changed model parameters as follows (out1 = bilstm; out2 = lstm; out2 = out1 + out2):
+	- B: changed model parameters as follows (out1 = bilstm; out2 = lstm; out2 = out1 + out2):
  ```matlab
 layers = [
     sequenceInputLayer(numFeatures, 'Name', 'input') % Input layer
@@ -382,7 +383,7 @@ options = trainingOptions('adam', ...
 [net, info] = trainNetwork(x_train, y_train, lgraph, options);
 ```
 
- 	- B: changed model parameters as follows (out1 = bilstm; out2 = out1 + inputs):
+ 	- C: changed model parameters as follows (out1 = bilstm; out2 = out1 + inputs):
  ```matlab
 layers = [
     sequenceInputLayer(numFeatures, 'Name', 'input') % Input layer
