@@ -286,17 +286,17 @@ Pipeline #2: train the second model while freezing the first three layers of the
    	- E: numHiddenUnits1 = numFeatures*4; numHiddenUnits2 = numFeatures*2; mini_batch_size=256; 'ValidationPatience', 15;
 	- F: removed logical shoe GRF values
 
- |Condition|A|A|A|A|A|B|C|
-|:---|---:|---:|---:|---:|---:|---:|---:|
-|V-Subject	|S1|S3|S5|S7|S9|S1|S1|
-|T-RMSE /mm	|1.7358|1.9225|2.0063|2.0070|1.5938|1.9459|4.3397|
-|T-R2		|0.9900|0.9877|0.9869|0.9867|0.9916|0.9874|0.9372|
-|T-Bias /mm	|0.09|-0.08|0.14|0.15|0.20|-0.28|-0.44|
-|T-95CI /mm	|[-3.31, 3.49]|[-3.85, 3.68]|[-3.78, 4.06]|[-3.77, 4.07]|[-2.90, 3.30]|[-4.06, 3.49]|[-8.90, 8.02]|
-|V-RMSE /mm	|3.7652|4.9587|3.0674|3.0935|3.5234|3.9014|6.1124|
-|V-R2		|0.9475|0.9106|0.9515|0.9618|0.9537|0.9436|0.8615|
-|V-Bias /mm	|0.05|2.02|-0.37|-0.52|2.04|-0.51|-0.37|
-|V-95CI /mm	|[-7.33, 7.43]|[-6.86, 10.90]|[-6.34, 5.60]|[-6.50, 5.45]|[-3.60, 7.67]|[-8.09, 7.07]|[-12.33, 11.59]|
+ |Condition|A|A|A|A|A|B|C|D|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|S1|S3|S5|S7|S9|S1|S1|0%-10%|
+|T-RMSE /mm	|1.7358|1.9225|2.0063|2.0070|1.5938|1.9459|4.3397|1.8910|
+|T-R2		|0.9900|0.9877|0.9869|0.9867|0.9916|0.9874|0.9372|0.9875|
+|T-Bias /mm	|0.09|-0.08|0.14|0.15|0.20|-0.28|-0.44|-0.13|
+|T-95CI /mm	|[-3.31, 3.49]|[-3.85, 3.68]|[-3.78, 4.06]|[-3.77, 4.07]|[-2.9, 3.3]|[-4.06, 3.49]|[-8.9, 8.02]|[-3.83, 3.5]|
+|V-RMSE /mm	|3.7652|4.9587|3.0674|3.0935|3.5234|3.9014|6.1124|4.2867|
+|V-R2		|0.9475|0.9106|0.9515|0.9618|0.9537|0.9436|0.8615|0.9308|
+|V-Bias /mm	|0.05|2.02|-0.37|-0.52|2.04|-0.51|-0.37|0.11|
+|V-95CI /mm	|[-7.33, 7.43]|[-6.86, 10.9]|[-6.34, 5.6]|[-6.5, 5.45]|[-3.6, 7.67]|[-8.09, 7.07]|[-12.33, 11.59]|[-8.29, 8.51]|
 
 	- A: changed model parameters as follows (added GELU):
   ```matlab
@@ -430,3 +430,8 @@ options = trainingOptions('adam', ...
 % Train the network
 [net, info] = trainNetwork(x_train, y_train, lgraph, options);
 ```
+ 	- D: model parameters are same as in Condition A, while all input data are z-score normalized:
+  		- (1) collect each type of input/output data across all subjects and trials into a vector to calculate overall `mean` and `std`
+		- (2) z-score normalize each type of input/output data, e.g., `(tc_l - mean_tc_l) / std_tc_l`
+  		- (3) divide normalized data into moving winodws, and allocate 0%-10% for validation, 10%-80% for training, 80%-100% for testing
+		- (4) codes afer `%% ↓ remove NaN elements, which may affects the model training` are unchanged
