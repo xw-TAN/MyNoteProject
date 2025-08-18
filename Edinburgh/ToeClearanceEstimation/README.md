@@ -435,3 +435,28 @@ options = trainingOptions('adam', ...
 		- (2) z-score normalize each type of input/output data, e.g., `(tc_l - mean_tc_l) / std_tc_l`
   		- (3) divide normalized data into moving winodws, and allocate 0%-10% for validation, 10%-80% for training, 80%-100% for testing
 		- (4) codes afer `%% ↓ remove NaN elements, which may affects the model training` are unchanged
+
+
+ |Condition|A|B|C|D|E|F|G|H|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|S1|S1|S1|S1|S1|S1|S1|S1|
+|T-RMSE /mm	|1.5963|1.8689|2.1802|2.3159|1.8189|1.7881|2.1339|2.5121|
+|T-R2		|0.9915|0.9884|0.9842|0.9821|0.9890|0.9893|0.9848|0.9790|
+|T-Bias /mm	|0.19|0.07|-0.12|-0.05|0.03|-0.43|0.03|-1.06|
+|T-95CI /mm	|[-2.91, 3.30]|[-3.59, 3.73]|[-4.39, 4.15]|[-4.58, 4.49]|[-3.53, 3.59]|[-3.83, 2.97]|[-4.15, 4.21]|[-5.52, 3.41]|
+|V-RMSE /mm	|3.9939|4.3660|4.2874|4.3910|3.9307|3.9748|4.1142|4.7835|
+|V-R2		|0.9409|0.9293|0.9319|0.9285|0.9427|0.9414|0.9373|0.9152|
+|V-Bias /mm	|0.02|-0.46|-0.05|-0.24|-0.25|-0.54|-0.45|-1.48|
+|V-95CI /mm	|[-7.81, 7.85]|[-8.97, 8.05]|[-8.45, 8.36]|[-8.83, 8.36]|[-7.94, 7.44]|[-8.26, 7.18]|[-8.47, 7.56]|[-10.40, 7.44]|
+
+ 	- out1 = bilstm, out2=lstm; out2=out1+out2. It has the following combinations:
+  	- A: bilstm → BN1 → GELU1 → Dropout1 → LSTM → +bilstm Output → regressionLayer
+   	- B: bilstm → BN1 → GELU1 → Dropout1 → LSTM → +bilstm Output → BN2 → GELU2 → Dropout2 → regressionLayer
+	- C: bilstm → BN1 → GELU1 → Dropout1 → LSTM → +Dropout1 Output → regressionLayer
+ 	- D: bilstm → BN1 → GELU1 → Dropout1 → LSTM → +Dropout1 Output → BN2 → GELU2 → Dropout2 → regressionLayer
+  	- E: bilstm → BN1 → GELU1 → Dropout1 → LSTM → BN2 → GELU2 → Dropout2 → +bilstm Output → regressionLayer
+    - F: bilstm → BN1 → GELU1 → Dropout1 → LSTM → BN2 → GELU2 → Dropout2 → +Dropout1 Output → regressionLayer
+	- G: bilstm → LSTM → +bilstm Output → BN2 → GELU2 → Dropout2 → regressionLayer
+ 	- H: bilstm → LSTM → BN2 → GELU2 → Dropout2 → +bilstm Output → regressionLayer
+
+  
