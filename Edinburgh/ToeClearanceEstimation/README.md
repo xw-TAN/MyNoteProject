@@ -460,3 +460,129 @@ options = trainingOptions('adam', ...
  	- H: bilstm → LSTM → BN2 → GELU2 → Dropout2 → +bilstm Output → regressionLayer
 
   
+-----
+8. Test different input combinations
+
+ |Condition|C1|C2|C3|C4|C5|C6|C7|C8|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|
+|T-RMSE /mm	|1.5082|1.6274|1.5889|1.9071|1.4121|1.4971|1.4055|1.9033|
+|T-R2		|0.9920|0.9907|0.9912|0.9873|0.9930|0.9921|0.9931|0.9873|
+|T-Bias /mm	|-0.05|-0.34|-0.20|0.02|-0.19|-0.05|0.13|-0.01|
+|T-95CI /mm	|[-3.01, 2.90]|[-3.46, 2.78]|[-3.29, 2.89]|[-3.71, 3.76]|[-2.93, 2.55]|[-2.98, 2.88]|[-2.61, 2.87]|[-3.74, 3.72]|
+|V-RMSE /mm	|4.3841|4.0704|4.2960|4.6544|4.1970|4.3340|4.2213|3.7260|
+|V-R2		|0.9276|0.9376|0.9305|0.9184|0.9337|0.9293|0.9329|0.9477|
+|V-Bias /mm	|-1.24|-1.38|-1.16|-1.05|-0.87|-1.06|-0.51|-0.24|
+|V-95CI /mm	|[-9.48, 7.00]|[-8.89, 6.13]|[-9.27, 6.95]|[-9.94, 7.83]|[-8.92, 7.18]|[-9.29, 7.18]|[-8.72, 7.71]|[-7.52, 7.05]|
+
+
+ |Condition|C9|C10|C11|C12|C13|C14|C15|C16|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|
+|T-RMSE /mm	|2.1535|1.4095|1.7660|2.0179|1.4199|1.8851|2.2805|1.4242|
+|T-R2		|0.9838|0.9930|0.9891|0.9857|0.9929|0.9875|0.9818|0.9929|
+|T-Bias /mm	|0.27|0.02|-0.46|0.53|-0.17|-0.29|0.25|-0.25|
+|T-95CI /mm	|[-3.92, 4.45]|[-2.74, 2.78]|[-3.80, 2.88]|[-3.28, 4.35]|[-2.93, 2.59]|[-3.94, 3.36]|[-4.19, 4.70]|[-3.00, 2.50]|
+|V-RMSE /mm	|4.1841|4.6216|4.6562|4.0231|4.2131|4.5442|5.1560|3.7065|
+|V-R2		|0.9341|0.9196|0.9183|0.9390|0.9331|0.9222|0.8999|0.9483|
+|V-Bias /mm	|0.55|-0.95|-1.15|0.78|-0.98|-1.09|1.01|-0.11|
+|V-95CI /mm	|[-7.58, 8.68]|[-9.81, 7.92]|[-9.99, 7.70]|[-6.95, 8.52]|[-9.01, 7.05]|[-9.74, 7.56]|[-8.90, 10.92]|[-7.37, 7.15]|
+
+ |Condition|C17|C18|C19|C20|C21|C22|C23| |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%|0-10%| |
+|T-RMSE /mm	|1.6043|1.9783|1.7557|1.7429|2.1251|1.9671| | |
+|T-R2		|0.9910|0.9863|0.9892|0.9894|0.9842|0.9864| | |
+|T-Bias /mm	|-0.07|0.10|-0.27|-0.46|-0.36|-0.46| | |
+|T-95CI /mm	|[-3.21, 3.07]|[-3.77, 3.97]|[-3.67, 3.13]|[-3.76, 2.83]|[-4.47, 3.74]|[-4.21, 3.29]| | |
+|V-RMSE /mm	|4.4437|3.8905|4.5894|3.8079|4.4403|4.3107| | |
+|V-R2		|0.9256|0.9430|0.9207|0.9454|0.9257|0.9300| | |
+|V-Bias /mm	|-0.80|-0.59|-0.81|-0.91|-0.87|-1.23| | |
+|V-95CI /mm	|[-9.36, 7.77]|[-8.12, 6.95]|[-9.66, 8.05]|[-8.16, 6.34]|[-9.41, 7.66]|[-9.33, 6.87]| | |
+
+
+```matlab
+% the completed inputs
+nAll_Input.shoeTime(index, :)'; ...
+nAll_Input.accel_l(index, :)'; ...
+nAll_Input.EulerAngles_footIMU_l(index, :)';...
+nAll_Input.EulerAngles_shank_l(index, :)';...
+nAll_Input.gyro_l(index, :)';...
+nAll_Input.heel_l(index, :)';...
+nAll_Input.inc(index, :)';...
+nAll_Input.little_l(index, :)';...
+nAll_Input.shoeSize(index, :)';...
+nAll_Input.thumb_l(index, :)']};
+
+% model parameters usd
+numFeatures = size(x_train{1}, 1);
+numHiddenUnits1 = numFeatures*6;
+numHiddenUnits2 = numFeatures*3;
+numResponses = size(y_train{1}, 1);
+dropoutLayer1=0.15;
+NEpoch=80;
+LearningRate=0.002;
+shuffle = 'every-epoch'; % sequence-to-sequence training and estimation
+layer1='sequence';
+mini_batch_size=128;
+
+layers = [
+    sequenceInputLayer(numFeatures) % input layer
+    bilstmLayer(numHiddenUnits1, 'OutputMode', 'sequence')  % 1st layer
+    batchNormalizationLayer
+    geluLayer
+    dropoutLayer(dropoutLayer1)
+
+    lstmLayer(numHiddenUnits2, 'OutputMode', 'sequence')  % 2nd layer
+    batchNormalizationLayer
+    geluLayer
+    dropoutLayer(dropoutLayer1)
+
+    fullyConnectedLayer(numResponses) % output layer
+    regressionLayer
+    ];
+
+options = trainingOptions('adam',...
+    'ValidationData',{x_test, y_test},...
+    'ValidationPatience', 12,... % changed
+    'MiniBatchSize', mini_batch_size,...
+    'MaxEpochs', NEpoch, ...
+    'InitialLearnRate', LearningRate, ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropPeriod', 4, ... % changed
+    'LearnRateDropFactor', 0.6, ... % changed
+    'GradientThreshold', 1, ... % added
+    'L2Regularization', 1e-4, ...
+    'Shuffle', shuffle, ...
+    'Verbose', false, ...
+    'Plots', 'training-progress',...
+    'ExecutionEnvironment', 'auto');
+
+[net, info] = trainNetwork(x_train, y_train, layers, options);
+```
+ 
+	- C1: grf only has heel
+ 	- C2: grf only has little
+  	- C3: grf only has thumb
+    - C4: accel only has x,y
+	- C5: accel only has x,z
+ 	- C6: accel only has y,z
+  	- C7: foot angle only has x,y
+    - C8: foot angle only has x,z
+	- C9: foot angle only has y,z
+ 	- C10: shank angle only has x,y
+ 	- C11: shank angle only has x,z
+ 	- C12: shank angle only has y,z
+  	- C13: remove time
+    - C14: remove accel
+	- C15: remove foot angle
+ 	- C16: remove shank angle
+    - C17: remove gyro
+	- C18: remove grf_heel
+ 	- C19: remove inc
+  	- C20: remove grf_little
+   	- C21: remove shoe size
+	- C22: remove grf_thumb
+ 	- C23: completed inputs
+
+  
