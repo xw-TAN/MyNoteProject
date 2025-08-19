@@ -131,6 +131,7 @@ for i=total_subject
 
 
             % ↓ 3D orientation angle estimated using Marker data
+
             EulerAngles_footIMU_l = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).Timesteps,...
                     results.(subjects{i}).MarkerData.([experiment_name '_Processed']).EulerAngles_footIMU_l',...
                     eq_vicon_time);
@@ -143,6 +144,7 @@ for i=total_subject
                                results.(subjects{i}).IMUData.([experiment_name]).accel_l,...
                                eq_vicon_time);
                            
+
             % ↓ create a window of input data (only left)
             x_set = {[  %(experiment_data.time(k:k+window,1)-experiment_data.time(k,1))';...
                         ((experiment_data.time(k:k+window,1)-experiment_data.time(k,1))/max_time)';...
@@ -170,6 +172,7 @@ for i=total_subject
 %                         (experiment_data.gyro_l(k:k+window, 1)     ./max_gyro)';...
 
                         (inc*ones(length(k:k+window),1))';...
+
 %                         (inc*ones(length(k:k+window),1)/max_inc)';...
                         
                         EulerAngles_footIMU_l';...
@@ -181,6 +184,7 @@ for i=total_subject
                         (subject_shoe_size_m(i)*ones(length(k:k+window),1))';  
 %                         ((subject_shoe_size(i)*ones(length(k:k+window),1)-38)/6)';...
                         
+
                         % (experiment_data.phase_l(k:k+window, 1))'
 
 %                         (experiment_data.COM_l(k:k+window,:))';
@@ -575,4 +579,6 @@ exportgraphics(currentfig(1).CurrentAxes,[local_data_dir filesep 'LearningConver
 ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,'options',options,'scale_y',scale_y,'window',window,'x_set',x_set);
 ResultsParams = struct('bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
 
+
 save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
+

@@ -1,6 +1,6 @@
 %
-% To add new info into the old dataset (downloaded from Andreas oneDrive), 
-% and form a new dataset for 'ReadingShoeDataTrainingModels_Xiaowei_v3.m'
+% To add new info into the old dataset and form a new dataset for use in
+% 'ReadingShoeDataTrainingModels_Xiaowei_v3.m'
 %
 
 clc;
@@ -12,13 +12,15 @@ num = 10;
 % loop each subject
 for i = 1:num
     local_data_dir=fullfile(pwd,'..','..','..','Moonshot','LocalData','Experiment','FESTrajectories_v02');
+    
     % ↓ load old dataset
     subNo = ['S' num2str(i)];
     load([local_data_dir filesep subNo '.mat']);
     
     % ↓ wrap
     R.S = eval(subNo);
-    
+
+    % ↓ get condition numbers for this subject
     fns = fieldnames( R.S.ShokacData );
     ConditionNum = numel(fns);
     
@@ -26,16 +28,15 @@ for i = 1:num
     for j = 1:ConditionNum
 
         % ↓ replace '_' with '-' to match the files' name
-        fns_new = fns{j};
+        fns_new = fns{j}; % used to search the files
         underscores = find(fns_new == '_');
         if numel(underscores) == 2 && ~contains(fns_new,'edgecase')
             fns_new(underscores(2)) = '-';
         end
 
 
-
         % % ↓ get shoeData file path
-        % pathName = ['./' subNo '/ShoeData' '/' fns_new '.txt'];
+        % pathName = [local_data_dir filesep subNo filesep 'ShoeData' filesep fns_new '.txt'];
         % % ↓ get file data
         % shoeData = readmatrix(pathName);
         % % ↓ get time sequence
@@ -52,9 +53,8 @@ for i = 1:num
         % R.S.ShokacData.(fns{j}).phase_l = sum(shoeCOML, 2) ~= 0; % 1 stance, 0 swing
 
 
-
         % ↓ get grfData file path
-        % pathName = ['./' subNo '/GRFData' '/' fns_new '_GRFs_Processed.mot'];
+        % pathName = [local_data_dir filesep subNo filesep 'GRFData' filesep fns_new '_GRFs_Processed.mot'];
         % % ↓ get file data
         % grfData = readmatrix(pathName, 'FileType', 'text');
         % % ↓ get the right vertical force for HS identification
@@ -65,59 +65,163 @@ for i = 1:num
         % R.S.ShokacData.(fns{j}).time_diff = shoeTime(idxHS_s(1)) - shoeTime(1) - grfData(idxHS_t(1), 1);
 
 
-
         % ↓ get markerData file path
         if contains(fns_new,'edgecase')
             pathName = [local_data_dir filesep subNo filesep 'MarkerData' filesep 'EdgeCases' filesep fns_new '_Processed.trc'];
         else
             pathName = [local_data_dir filesep subNo filesep 'MarkerData' filesep fns_new '_Processed.trc'];
         end
-        % ↓ get file data
+        % ↓ get numerical data
         markerData = readmatrix(pathName, 'FileType', 'text');
+
+        % delete rows with NaN
+        rowsWithNaN = any(isnan(markerData), 2);
+        markerData(rowsWithNaN, :) = [];
+        
+        % ↓ get title line
+        lines = readlines(pathName);
+        Title = split(lines(4));
+
+        % ↓ check if there are duplicate marker names
+        [uniqueTitle, ~, idx] = unique(Title);
+        counts = histcounts(idx, 1:numel(uniqueTitle)+1);
+        repeatedStrings = uniqueTitle(counts > 1);
+        for n = 1:numel(uniqueTitle)
+            if counts(n) > 1
+                fprintf('%s: "%s" appears %d times\n', pathName, uniqueTitle{n}, counts(n));
+            end
+        end
+        % if there are duplicate marker names, skip this file
+        if length(uniqueTitle) ~= length(Title)
+            continue;
+        end
+        
         % ↓ get the Timesteps
         markerTime = markerData(:, 2);
+
         % ↓ get the Left MTP1, MTP5, HEEL
-        markerMTP1_L = markerData(:, 78:80);
-        markerMTP5_L = markerData(:, 81:83);
-        markerHEEL_L = markerData(:, 75:77);
+        idx = find(contains(Title, 'L_Heel'));
+        if isempty(idx)
+            disp(['Error: [L_Heel] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerHEEL_L = markerData(:, rag);
+        
+        idx = find(contains(Title, 'L_MTP1'));
+        if isempty(idx)
+            disp(['Error: [L_MTP1] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP1_L = markerData(:, rag);
+        
+        idx = find(contains(Title, 'L_MTP5'));
+        if isempty(idx)
+            disp(['Error: [L_MTP5] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP5_L = markerData(:, rag);
+        
         % ↓ get the Right MTP1, MTP5, HEEL
-        markerMTP1_R = markerData(:, 66:68);
-        markerMTP5_R = markerData(:, 69:71);
-        markerHEEL_R = markerData(:, 63:65);
-        % ↓ delete NaN elements
-        idxNan = isnan(markerTime) | ...
-                 any(isnan(markerMTP1_L), 2) | ...
-                 any(isnan(markerMTP5_L), 2) | ...
-                 any(isnan(markerHEEL_L), 2) | ...
-                 any(isnan(markerMTP1_R), 2) | ...
-                 any(isnan(markerMTP5_R), 2) | ...
-                 any(isnan(markerHEEL_R), 2);
-        markerTime(idxNan) = [];
-        markerMTP1_L(idxNan, :) = [];
-        markerMTP5_L(idxNan, :) = [];
-        markerHEEL_L(idxNan, :) = [];
-        markerMTP1_R(idxNan, :) = [];
-        markerMTP5_R(idxNan, :) = [];
-        markerHEEL_R(idxNan, :) = [];
+        idx = find(contains(Title, 'R_Heel'));
+        if isempty(idx)
+            disp(['Error: [R_Heel] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerHEEL_R = markerData(:, rag);
+        
+        idx = find(contains(Title, 'R_MTP1'));
+        if isempty(idx)
+            disp(['Error: [R_MTP1] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP1_R = markerData(:, rag);
+        
+        idx = find(contains(Title, 'R_MTP5'));
+        if isempty(idx)
+            disp(['Error: [R_MTP5] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerMTP5_R = markerData(:, rag);
 
-        % ↓ add new info into the old dataset
-        R.S.MarkerData.([fns{j} '_Processed']).data=[];
-        R.S.MarkerData.([fns{j} '_Processed']).data.Timesteps = markerTime';
+        % ↓ get the Left shank_upper, shank_med, shank_lat
+        idx = find(contains(Title, 'L_Shank_Upper'));
+        if isempty(idx)
+            disp(['Error: [L_Shank_Upper] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKUP_L = markerData(:, rag);
 
-        % ↓ calculate 3D IMU orientation angles
-        euler_angles_l = calc3DIMUOrientation(markerHEEL_L, markerMTP1_L, markerMTP5_L, 'L');
-        euler_angles_r = calc3DIMUOrientation(markerHEEL_R, markerMTP1_R, markerMTP5_R, 'R');
-        % ↓ add new info into the old dataset
-        R.S.MarkerData.([fns{j} '_Processed']).data.EulerAngles_l = euler_angles_l;
-        R.S.MarkerData.([fns{j} '_Processed']).data.EulerAngles_r = euler_angles_r;
+        idx = find(contains(Title, 'L_Shank_Med'));
+        if isempty(idx)
+            disp(['Error: [L_Shank_Med] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKME_L = markerData(:, rag);
 
+        idx = find(contains(Title, 'L_Shank_Lat'));
+        if isempty(idx)
+            disp(['Error: [L_Shank_Lat] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKLA_L = markerData(:, rag);
+
+        % ↓ get the right shank_upper, shank_med, shank_lat
+        idx = find(contains(Title, 'R_Shank_Upper'));
+        if isempty(idx)
+            disp(['Error: [R_Shank_Upper] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKUP_R = markerData(:, rag);
+
+        idx = find(contains(Title, 'R_Shank_Med'));
+        if isempty(idx)
+            disp(['Error: [R_Shank_Med] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKME_R = markerData(:, rag);
+
+        idx = find(contains(Title, 'R_Shank_Lat'));
+        if isempty(idx)
+            disp(['Error: [R_Shank_Lat] ' pathName]);
+            continue;
+        end
+        rag = (idx-3)*3+3:(idx-3)*3+5;
+        markerSKLA_R = markerData(:, rag);
+
+        % ↓ add time steps
+        R.S.MarkerData.([fns{j} '_Processed']).Timesteps = markerTime';
+
+        % ↓ calculate 3D foot IMU orientation angles
+        euler_angles_imu_l = calc3DIMUOrientation(markerHEEL_L, markerMTP1_L, markerMTP5_L, 'L');
+        euler_angles_imu_r = calc3DIMUOrientation(markerHEEL_R, markerMTP1_R, markerMTP5_R, 'R');
+
+        % ↓ calculate 3D shank orientation angles
+        euler_angles_shank_l = calc3DShankOrientation(markerSKUP_L, markerSKME_L, markerSKLA_L, 'L');
+        euler_angles_shank_r = calc3DShankOrientation(markerSKUP_R, markerSKME_R, markerSKLA_R, 'R');
+        
+        % ↓ add euler angles
+        R.S.MarkerData.([fns{j} '_Processed']).EulerAngles_footIMU_l = euler_angles_imu_l';
+        R.S.MarkerData.([fns{j} '_Processed']).EulerAngles_footIMU_r = euler_angles_imu_r';
+        R.S.MarkerData.([fns{j} '_Processed']).EulerAngles_shank_l   = euler_angles_shank_l';
+        R.S.MarkerData.([fns{j} '_Processed']).EulerAngles_shank_r   = euler_angles_shank_r';
 
         % ↓ display the current progress
         disp([char(subNo) ': ' char(fns(j))]);
     end
 
     % override the old dataset using the new one
-    eval([subNo ' = R.S']);
+    eval([subNo ' = R.S;']);
     vars = who('S*');
     clearvars('-except', vars{:});
 end
