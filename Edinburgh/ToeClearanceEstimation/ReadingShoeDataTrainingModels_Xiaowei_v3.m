@@ -10,7 +10,7 @@ subject_shoe_size   = [42, 40, 42, 42, 42, 40, 40, 42, 40, 42]; % [EU Size]
 subject_shoe_size_m = (subject_shoe_size + 10)./200; % [m]
 
 if ~exist('S1','var')
-    load S1_S10_AddedInfo.mat;
+    load S1_S10_AddedInfo_05-Aug.mat;
 end
 
 load butterworth_3rd_FS100Hz_FC15Hz.mat; % butterworth filter, 3rd order, fs 100Hz, fc 15Hz
@@ -79,7 +79,10 @@ for i=total_subject
         
         % Ignore Edge cases
         if contains(experiment_name,'edgecase')
-            continue
+            edge_case_flag=1;
+        else
+            edge_case_flag=0;
+%             continue
         end
         
         % temporarily negect toe clearance collected with non-zero treadmill inclination
@@ -106,12 +109,19 @@ for i=total_subject
                             experiment_data.time(1) - experiment_data.time_diff;
             
             % ↓ in case the shoe collection time longer than the vicon
-            if max(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps) < max(eq_vicon_time)
+            if max(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).Timesteps) < max(eq_vicon_time)
                 break;
             end
-
+            
+%             if any(experiment_data.thumb_l(k:k+window,2:7)==-50,'all') || ...
+%                 any(experiment_data.heel_l(k:k+window,2:7)==-50,'all') || ...
+%                 any(experiment_data.little_l(k:k+window,2:7)==-50,'all') || ...
+%                 any(experiment_data.accel_l(k:k+window,1:3)==-1000,'all') || ...
+%                 any(experiment_data.gyro_l(k:k+window,1)==-1000,'all')
+%                 continue
+%             end
             % ↓ interpolation for data alignment
-            tc = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps,...
+            tc = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).Timesteps,...
                          results.(subjects{i}).MarkerData.([experiment_name '_Processed']).toe_clearance_l,...
                          eq_vicon_time);
 
@@ -121,14 +131,21 @@ for i=total_subject
 
 
             % ↓ 3D orientation angle estimated using Marker data
-            eulerAgl = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.Timesteps,...
-                               results.(subjects{i}).MarkerData.([experiment_name '_Processed']).data.EulerAngles_l,...
+            EulerAngles_footIMU_l = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).Timesteps,...
+                    results.(subjects{i}).MarkerData.([experiment_name '_Processed']).EulerAngles_footIMU_l',...
+                    eq_vicon_time);
+            EulerAngles_shank_l = interp1(results.(subjects{i}).MarkerData.([experiment_name '_Processed']).Timesteps,...
+                    results.(subjects{i}).MarkerData.([experiment_name '_Processed']).EulerAngles_shank_l',...
+                    eq_vicon_time);
+
+            % Calculate Delsys IMU based on Shokac data
+            Delsys_IMU = interp1(results.(subjects{i}).IMUData.([experiment_name]).time,...
+                               results.(subjects{i}).IMUData.([experiment_name]).accel_l,...
                                eq_vicon_time);
-
-
+                           
             % ↓ create a window of input data (only left)
-            x_set = {[  (experiment_data.time(k:k+window,1)-experiment_data.time(k,1))';...
-%                         ((experiment_data.time(k:k+window,1)-experiment_data.time(k,1))/max_time)';...
+            x_set = {[  %(experiment_data.time(k:k+window,1)-experiment_data.time(k,1))';...
+                        ((experiment_data.time(k:k+window,1)-experiment_data.time(k,1))/max_time)';...
 
                         % logic grf values result in better accuracy
                         % (capture gait state)
@@ -146,6 +163,7 @@ for i=total_subject
 %                         (experiment_data.heel_l(k:k+window,   2:7)./max_Shokac_force)';...
                         
                         (experiment_data.accel_l(k:k+window, 1:3))'.*9.8;...
+%                          Delsys_IMU';
 %                         (experiment_data.accel_l(k:k+window, 1:3)  ./max_accel)';...
 
                         (experiment_data.gyro_l(k:k+window, 1))';...
@@ -154,28 +172,36 @@ for i=total_subject
                         (inc*ones(length(k:k+window),1))';...
 %                         (inc*ones(length(k:k+window),1)/max_inc)';...
                         
-                        eulerAgl';...
+                        EulerAngles_footIMU_l';...
+						EulerAngles_shank_l';...
 %                         (eulerAgl/max_eulerAgl)';...
                         
-                        % (subject_weights(i)*ones(length(k:k+window),1) ./max_weight)';...
+%                         (subject_weights(i)*ones(length(k:k+window),1))';...
                         
-                        (subject_shoe_size_m(i)*ones(length(k:k+window),1))',  
+                        (subject_shoe_size_m(i)*ones(length(k:k+window),1))';  
 %                         ((subject_shoe_size(i)*ones(length(k:k+window),1)-38)/6)';...
                         
                         % (experiment_data.phase_l(k:k+window, 1))'
+
+%                         (experiment_data.COM_l(k:k+window,:))';
+                        
+                        % Adding masked data to try to allow the model to
+                        % learn when to ignore values that are wrong
+                        % (sensor problems)
+                        (experiment_data.masked_data(k:k+window,1:5))'
                     ]};
 
 
             % fill the dataset 
             if ismember(i, train_test_subjects) % train dataset
-                if k < start_entry+(last_entry-start_entry)*0.8
+                if k < start_entry+(last_entry-start_entry)*0.8 
                     x_train = [x_train; x_set];
                     y_train = [y_train; y_set];
                 else % test dataset used after each epoch
                     x_test = [x_test; x_set];
                     y_test = [y_test; y_set];
                 end
-            elseif ismember(i, val_subjects) % validation dataset used finally to test the model
+            elseif ismember(i, val_subjects)  % validation dataset used finally to test the model
                 x_val = [x_val; x_set];
                 y_val = [y_val; y_set];
             end
@@ -271,6 +297,7 @@ numFeatures = size(x_train{1}, 1);
 % ↓ two hidden layers
 numHiddenUnits1 = numFeatures*6;
 numHiddenUnits2 = numFeatures*3;
+
 % ↓ feature dimension of each frame of output data 
 numResponses = size(y_train{1}, 1); 
 % ↓ para initialization
@@ -284,6 +311,9 @@ layer1='sequence';
 mini_batch_size=128;
 L2Regularization=1e-04;
 % L2Regularization=1e-08;
+minValues = cellfun(@min, y_train);   % minimum in each cell
+overallMin = min(minValues);    % minimum across all cells
+epsilon=abs(overallMin)*1.1;
 
 if dropoutLayer1>0
     % layers = [  sequenceInputLayer(numFeatures) % input layer (feature dimensions)
@@ -305,7 +335,6 @@ if dropoutLayer1>0
                 batchNormalizationLayer
                 dropoutLayer(dropoutLayer1)
 
-%                 lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 3rd layer
                 lstmLayer(numFeatures*2, 'OutputMode', 'sequence') % 3rd layer
                 fullyConnectedLayer(64)
                 batchNormalizationLayer
@@ -313,7 +342,8 @@ if dropoutLayer1>0
 % 
                 fullyConnectedLayer(numResponses) % output layer
                 regressionLayer
-             ];
+%                 WeightedMSERegressionLayer('custom_loss', epsilon);             
+                ];
 else % a simple one
     layers = [  sequenceInputLayer(numFeatures)
                 lstmLayer(numHiddenUnits1,OutputMode="sequence")
@@ -333,7 +363,8 @@ options = trainingOptions('adam',...
                           'L2Regularization', L2Regularization, ...
                           'Shuffle', shuffle, ...
                           'Verbose', false, ...
-                          'Plots', 'training-progress'); % pop training progress figure
+                          'Plots', 'training-progress');% ,...    %pop training progress figure
+%                           'ExecutionEnvironment','auto'); %  try this to see if the training is faster (it's not on Andrea's PC)
 
 
 [net, info] = trainNetwork(x_train, y_train, layers, options);
@@ -405,7 +436,7 @@ fprintf('Validation Bias = %.2f mm\n', bias_val);
 fprintf('Validation 95CI = [%.2f mm, %.2f mm]\n', LoA_lower_val, LoA_upper_val);
 
 
-%% plot figures
+% plot figures
 fontsize    = 15;
 linewidth   = 1.5;
 blue_colour     = [0.2200 0.6447 0.8410];
@@ -413,7 +444,7 @@ orange_colour   = [0.8500 0.3250 0.0980];
 yellow_colour   = [0.9290 0.6940 0.1250];
 
 
-%% train dataset
+% train dataset
 yy_true_train=[];
 for i = 1:length(y_true_train)
     data = y_true_train{i};
@@ -454,7 +485,7 @@ plot(1:length(yy_pred_train), yy_pred_train, '-.', 'Color', orange_colour, 'Line
 legend('yy_true_train', 'yy_pred_train', 'Interpreter', 'none');
 
 
-%% validation dataset
+% validation dataset
 yy_true_val=[];
 for i = 1:length(y_true_val)
     data = y_true_val{i};
@@ -493,7 +524,7 @@ plot(1:length(yy_true_val), yy_true_val, 'Color', blue_colour, 'LineWidth', line
 plot(1:length(yy_pred_val), yy_pred_val, '-.', 'Color', orange_colour, 'LineWidth', linewidth);
 legend('yy_true_val', 'yy_pred_val', 'Interpreter', 'none');
 
-%% Save figs and results
+% Save figs and results
 % Define results path
 local_data_dir=fullfile(pwd,'..','..','..','Moonshot','LocalData','Experiment','FESTrajectories_v02','TrainingModelsResults');
 % Observe present folders (named in arithmetic order)
