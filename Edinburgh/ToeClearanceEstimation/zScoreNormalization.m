@@ -1,3 +1,9 @@
+clear;clc;
+
+if ~exist('S1','var')
+    load S1_S10_AddedInfo_05-Aug.mat;
+end
+
 total_subject = 1:10;
 
 All_Output.tc_l = [];

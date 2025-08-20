@@ -7,76 +7,68 @@ percentTes = [0.8, 1.0]; % 80-100% for testing
 window=60; % approximately one cycle (data window length) % could be optimised but at a high computational cost
 
 step_between_points=window/10;   % sliding window
-x_tra =[]; % for model training
-y_tra =[];
-x_tes =[]; % for model test after each epoch
-y_tes =[];
-x_val =[]; % for model final validation
-y_val =[];
 
-totalLen  = length(nAll_Output.tc_l);
-index_val = round(percentVal .* totalLen);
-index_tra = round(percentTra .* totalLen);
-index_tes = round(percentTes .* totalLen);
-
-for i = 1:step_between_points:totalLen-window
-
-    % show the percent progress
-    index = i:i+window-1;
-    disp(['progress: ' num2str(i/(totalLen-window)*100, '%.3f%%')]);
-
-    % output
-    y_set = {nAll_Output.tc_l(index)'};
+if ~exist('x_tra','var')
     
-    % input
-    x_set = {[
-             nAll_Input.shoeTime(index, :)'; ...
-             nAll_Input.accel_l(index, :)'; ...
-             nAll_Input.EulerAngles_footIMU_l(index, :)';...
-             nAll_Input.gyro_l(index, :)';...
-             nAll_Input.heel_l(index, :)';...
-             nAll_Input.inc(index, :)';...
-             nAll_Input.little_l(index, :)';...
-             nAll_Input.shoeSize(index, :)';...
-             nAll_Input.thumb_l(index, :)']};
-
-    % put them into vectors
-    if i>=min(index_val) && i<=max(index_val)
-        y_val = [y_val; y_set];
-        x_val = [x_val; x_set];
-    elseif i>=min(index_tra) && i<=max(index_tra)
-        y_tra = [y_tra; y_set];
-        x_tra = [x_tra; x_set];
-    elseif i>=min(index_tes) && i<=max(index_tes)
-        y_tes = [y_tes; y_set];
-        x_tes = [x_tes; x_set];
+    x_tra =[]; % for model training
+    y_tra =[];
+    x_tes =[]; % for model test after each epoch
+    y_tes =[];
+    x_val =[]; % for model final validation
+    y_val =[];
+    
+    totalLen  = length(nAll_Output.tc_l);
+    index_val = round(percentVal .* totalLen);
+    index_tra = round(percentTra .* totalLen);
+    index_tes = round(percentTes .* totalLen);
+    
+    
+    for i = 1:step_between_points:totalLen-window
+        
+        % show the percent progress
+        index = i:i+window-1;
+        disp(['progress: ' num2str(i/(totalLen-window)*100, '%.3f%%')]);
+        
+        % output
+        y_set = {nAll_Output.tc_l(index)'};
+        
+        % input
+        x_set = {[
+            nAll_Input.shoeTime(index, :)'; ...
+            nAll_Input.accel_l(index, :)'; ...
+            nAll_Input.EulerAngles_footIMU_l(index, :)';...
+            nAll_Input.gyro_l(index, :)';...
+            nAll_Input.heel_l(index, :)';...
+            nAll_Input.inc(index, :)';...
+            nAll_Input.little_l(index, :)';...
+            nAll_Input.shoeSize(index, :)';...
+            nAll_Input.thumb_l(index, :)']};
+        
+        % put them into vectors
+        if i>=min(index_val) && i<=max(index_val)
+            y_val = [y_val; y_set];
+            x_val = [x_val; x_set];
+        elseif i>=min(index_tra) && i<=max(index_tra)
+            y_tra = [y_tra; y_set];
+            x_tra = [x_tra; x_set];
+        elseif i>=min(index_tes) && i<=max(index_tes)
+            y_tes = [y_tes; y_set];
+            x_tes = [x_tes; x_set];
+        end
+        
     end
+    
+    x_train = x_tra;
+    y_train = y_tra;
+    x_test  = x_tes;
+    y_test  = y_tes;
+
+    % ↓ remove NaN elements, which may affects the model training
+    [x_train,y_train] = dropNaNCells(x_train,y_train);
+    [x_val,  y_val  ] = dropNaNCells(x_val,  y_val  );
+    [x_test, y_test ] = dropNaNCells(x_test, y_test );
 
 end
-
-
-x_train = x_tra;
-y_train = y_tra;
-x_test  = x_tes;
-y_test  = y_tes;
-
-
-
-% codes below are unchanged except removing the y_scale factor
-% (maybe codes below can be simplified using the above numerical vectors 
-% instead of cell vectors)
-
-%% ↓ remove NaN elements, which may affects the model training
-[x_train,y_train] = dropNaNCells(x_train,y_train);
-[x_val,  y_val  ] = dropNaNCells(x_val,  y_val  );
-[x_test, y_test ] = dropNaNCells(x_test, y_test );
-
-% ↓ scale down the output
-% scale_y = 0.1;
-% scale_y = 0.02;
-% y_train = cellfun(@(v) v * scale_y, y_train, 'UniformOutput', false);
-% y_test  = cellfun(@(v) v * scale_y, y_test,  'UniformOutput', false);
-% y_val   = cellfun(@(v) v * scale_y, y_val,   'UniformOutput', false);
 
 %% LSTMs
 
@@ -106,25 +98,36 @@ ValidationPatience = 12;
 % -------------------------
 % Bayesian optimisation setup
 % -------------------------
+numHiddenUnits1_array = [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures];
+numHiddenUnits2_array = [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures];
+dropout_rate_array = [0.10, 0.15, 0.2, 0.25, 0.30]*100;
+LearningRate_array = [1e-05, 5e-05, 1e-4, 5e-04, 1e-03, 5e-03, 1e-2]*1e05;
+L2Regularization_array =[1e-5, 1e-04, 1e-3]*1e5;
+mini_batch_size_array = [64, 128, 256];
+penaliseValue = (10-allMean_tc_l)/allStd_tc_l;
+
+optimArrays= struct('numHiddenUnits1',numHiddenUnits1_array,'numHiddenUnits2',numHiddenUnits2_array,'dropout_rate',dropout_rate_array,...
+    'LearningRate',LearningRate_array,'L2Regularization',L2Regularization_array,'mini_batch_size',mini_batch_size_array,'penaliseValue',penaliseValue);
+
 optimVars = [
-    optimizableVariable('numHiddenUnits1', [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures])
-    optimizableVariable('numHiddenUnits2', [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures])
-    optimizableVariable('dropout_rate',    [0.10, 0.15, 0.2, 0.25, 0.30])
-    optimizableVariable('LearningRate',    [1e-05, 5e-05, 1e-4, 5e-04, 1e-03, 5e-03, 1e-2])
-    optimizableVariable('L2Regularization',[1e-5, 1e-04, 1e-3])
-    optimizableVariable('mini_batch_size', [64, 128, 256])
+    optimizableVariable('numHiddenUnits1_idx', [1, numel(numHiddenUnits1_array)], 'Type', 'integer')
+    optimizableVariable('numHiddenUnits2_idx', [1, numel(numHiddenUnits2_array)], 'Type', 'integer')
+    optimizableVariable('dropout_rate_idx',    [1, numel(dropout_rate_array)], 'Type', 'integer')
+    optimizableVariable('LearningRate_idx',    [1, numel(LearningRate_array)], 'Type', 'integer')
+    optimizableVariable('L2Regularization_idx',[1, numel(L2Regularization_array)], 'Type', 'integer')
+    optimizableVariable('mini_batch_size_idx', [1, numel(mini_batch_size_array)], 'Type', 'integer')
 ];
 
 % Objective: minimise validation RMSE (computed from predictions on x_val,y_val)
 ObjFcn = @(T) objectiveFcn_seq2seq(T, x_train, y_train, x_val, y_val, ...
-                                   numFeatures, numResponses, NEpoch, ValidationPatience);
+                                   numFeatures, numResponses, NEpoch, ValidationPatience,optimArrays);
                                
 MaxEvals  = 50;   % adjust up if you have more compute
 
 results = bayesopt(ObjFcn, optimVars, ...
     'MaxObjectiveEvaluations', MaxEvals, ...
     'IsObjectiveDeterministic', false, ...
-    'UseParallel', true, ...      % set true if you have a pool/GPU capacity
+    'UseParallel', false, ...      % set true if you have a pool/GPU capacity
     'PlotFcn', {@plotObjectiveModel, @plotMinObjective}, ...
     'AcquisitionFunctionName', 'expected-improvement-plus');
 
@@ -132,10 +135,10 @@ best = results.XAtMinObjective;
 disp('Best hyperparameters found by BO:');
 disp(best);
 
-% Train the model on the best parameters obtained from Bayesian
+%% Train the model on the best parameters obtained from Bayesian
 % optimisation
 [layersBest, optionsBest] = buildModelAndOptions(best, numFeatures, numResponses, ...
-    NEpoch, ValidationPatience, x_test, y_test);
+    NEpoch, ValidationPatience, x_test, y_test,optimArrays);
 
 [net, info] = trainNetwork(x_train, y_train, layersBest, optionsBest);
 
@@ -326,7 +329,7 @@ function [xOut, yOut] = dropNaNCells(xIn, yIn)
     xOut = xIn; yOut = yIn;
 end
 
-function [layers, options] = buildModelAndOptions(T, numFeatures, numResponses, NEpoch, ValidationPatience, x_test, y_test)
+function [layers, options] = buildModelAndOptions(T, numFeatures, numResponses, NEpoch, ValidationPatience, x_test, y_test,optimArrays)
 
 % Static Parameters
 GradientThreshold = 1;  % Rarely improves results when tuned, unless exploding gradients are a clear issue. Leave fixed (1 or 2).
@@ -335,12 +338,12 @@ LearnRateDropFactor = 0.6;
 shuffle = 'every-epoch'; % sequence-to-sequence training and estimation
 
 % Opt parameters
-numHiddenUnits1 = T.numHiddenUnits1;
-numHiddenUnits2 = T.numHiddenUnits2;
-dropout_rate = T.dropout_rate;
-LearningRate = T.LearningRate;
-L2Regularization = T.L2Regularization;
-mini_batch_size = T.mini_batch_size;
+numHiddenUnits1 = optimArrays.numHiddenUnits1(T.numHiddenUnits1_idx);
+numHiddenUnits2 = optimArrays.numHiddenUnits2(T.numHiddenUnits2_idx);
+dropout_rate = optimArrays.dropout_rate(T.dropout_rate_idx)/100;
+LearningRate = optimArrays.LearningRate(T.LearningRate_idx)*1e-05;
+L2Regularization = optimArrays.L2Regularization(T.L2Regularization_idx)*1e-05;
+mini_batch_size = optimArrays.mini_batch_size(T.mini_batch_size_idx);
 
 layers = [
     sequenceInputLayer(numFeatures) % input layer
@@ -372,30 +375,31 @@ options = trainingOptions('adam',...
     'Shuffle', shuffle, ...
     'Verbose', false, ...
     'Plots', 'training-progress',...
-    'ExecutionEnvironment', 'auto');
+    'ExecutionEnvironment', 'gpu');
 end
 
 
 function results = objectiveFcn_seq2seq(T, x_train, y_train, x_test, y_test, ...
-                                        numFeatures, numResponses, NEpoch, ValidationPatience)
+                                        numFeatures, numResponses, NEpoch, ValidationPatience,optimArrays)
     % Build model for this hyperparameter sample
-    [layers, options] = buildModelAndOptions(T, numFeatures, numResponses, NEpoch, ValidationPatience, x_test, y_test);
+    [layers, options] = buildModelAndOptions(T, numFeatures, numResponses, NEpoch, ValidationPatience, x_test, y_test,optimArrays);
 
     % Train
     try
         net = trainNetwork(x_train, y_train, layers, options);
     catch ME
-        warning('Training failed for this hyperparameter set: %s', ME.message);
-        results = table((10-allMean_tc_l)/allStd_tc_l, 'VariableNames', {'Objective'}); % penalize failure with '10' which is not too large like inf and therefor will not mess up gradients too much
+        warning(ME.identifier, '%s', ME.message);
+        results = optimArrays.penaliseValue; % penalize failure with '10' which is not too large like inf and therefor will not mess up gradients too much
+%         results = table(optimArrays.penaliseValue, 'VariableNames', {'Objective'}); % penalize failure with '10' which is not too large like inf and therefor will not mess up gradients too much
         return
     end
 
     % Validate: compute RMSE on x_val,y_val
     y_pred_val = predict(net, x_test, 'MiniBatchSize', options.MiniBatchSize);
-    rmseVal    = rmse_seqcell(y_pred_val, y_test);
+    results    = rmse_seqcell(y_pred_val, y_test);
 
     % Return objective (minimise RMSE)
-    results = table(rmseVal, 'VariableNames', {'Objective'});
+%     results = table(rmseVal, 'VariableNames', {'Objective'});
 end
 
 
@@ -423,51 +427,51 @@ function e = rmse_seqcell(YhatCell, YtrueCell)
 end
 
 
-% %% Save figs and results
-% % Define results path
-% local_data_dir=fullfile(pwd, 'TrainingModelsResults');
-% % Observe present folders (named in arithmetic order)
-% files = dir(local_data_dir);
-% dirFlags= [files.isdir];
-% subFolder = files(dirFlags);
-% subFolderNames = [str2double({subFolder(3:end).name})];
-% % Observe latest folder of results (largest number)
-% maxFolderNum=max(subFolderNames);
-% % Create the next folder
-% nextFolderName = maxFolderNum+1;
-% if nextFolderName<10
-%     nextFolderName=['00' num2str(nextFolderName)];
-% elseif nextFolderName<100
-%     nextFolderName=['0' num2str(nextFolderName)];
-% else
-%     nextFolderName=['0' num2str(nextFolderName)];
-% end
-% mkdir(fullfile(local_data_dir,nextFolderName))
-% local_data_dir=fullfile(local_data_dir,nextFolderName);
-% 
-% % Save figures and useful script information
-% filename='TrainCorrFig.png';
-% saveas(train_corr_fig,[local_data_dir filesep filename])
-% filename='TrainCorrFig.fig';
-% saveas(train_corr_fig,[local_data_dir filesep filename])
-% 
-% filename='TrainCompFig.png';
-% saveas(train_comp_fig,[local_data_dir filesep filename])
-% filename='TrainCompFig.fig';
-% saveas(train_comp_fig,[local_data_dir filesep filename])
-% 
-% filename='ValCorrFig.png';
-% saveas(val_corr_fig,[local_data_dir filesep filename])
-% filename='ValCorrFig.fig';
-% saveas(val_corr_fig,[local_data_dir filesep filename])
-% 
-% filename='ValCompFig.png';
-% saveas(val_comp_fig,[local_data_dir filesep filename])
-% filename='ValCompFig.fig';
-% saveas(val_comp_fig,[local_data_dir filesep filename])
-% 
-% ModelTuningParams = struct('dropoutLayer1',dropoutLayer1,'LearningRate',LearningRate,'mini_batch_size',mini_batch_size,'NEpoch',NEpoch,'numFeatures',numFeatures,'numHiddenUnits1',numHiddenUnits1,'numHiddenUnits2',numHiddenUnits2,'numResponses',numResponses,...
-%     'layers',layers,'options',options,'scale_y',scale_y,'window',window,'step_between_points',step_between_points,'x_set',x_set);
-% ResultsParams = struct('model_net',net,'model_info',info,'bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'train_test_subjects',train_test_subjects,'val_rmse',val_rmse,'val_subjects',val_subjects);
-% 
-% save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
+%% Save figs and results
+% Define results path
+local_data_dir=fullfile(pwd, 'TrainingModelsResults');
+% Observe present folders (named in arithmetic order)
+files = dir(local_data_dir);
+dirFlags= [files.isdir];
+subFolder = files(dirFlags);
+subFolderNames = [str2double({subFolder(3:end).name})];
+% Observe latest folder of results (largest number)
+maxFolderNum=max(subFolderNames);
+% Create the next folder
+nextFolderName = maxFolderNum+1;
+if nextFolderName<10
+    nextFolderName=['00' num2str(nextFolderName)];
+elseif nextFolderName<100
+    nextFolderName=['0' num2str(nextFolderName)];
+else
+    nextFolderName=['0' num2str(nextFolderName)];
+end
+mkdir(fullfile(local_data_dir,nextFolderName))
+local_data_dir=fullfile(local_data_dir,nextFolderName);
+
+%% Save figures and useful script information
+filename='TrainCorrFig.png';
+saveas(train_corr_fig,[local_data_dir filesep filename])
+filename='TrainCorrFig.fig';
+saveas(train_corr_fig,[local_data_dir filesep filename])
+
+filename='TrainCompFig.png';
+saveas(train_comp_fig,[local_data_dir filesep filename])
+filename='TrainCompFig.fig';
+saveas(train_comp_fig,[local_data_dir filesep filename])
+
+filename='ValCorrFig.png';
+saveas(val_corr_fig,[local_data_dir filesep filename])
+filename='ValCorrFig.fig';
+saveas(val_corr_fig,[local_data_dir filesep filename])
+
+filename='ValCompFig.png';
+saveas(val_comp_fig,[local_data_dir filesep filename])
+filename='ValCompFig.fig';
+saveas(val_comp_fig,[local_data_dir filesep filename])
+
+ModelTuningParams = struct('NEpoch',NEpoch,'numFeatures',numFeatures,'numResponses',numResponses,...
+    'window',window,'step_between_points',step_between_points,'x_set',x_set);
+ResultsParams = struct('model_net',net,'model_info',info,'bias_train',bias_train,'bias_val',bias_val,'LoA_lower_train',LoA_lower_train,'LoA_upper_train',LoA_upper_train,'LoA_lower_val',LoA_lower_val,'LoA_upper_val',LoA_upper_val,'R2_train',R2_train,'R2_val',R2_val,'train_rmse',train_rmse,'val_rmse',val_rmse);
+
+save([local_data_dir filesep 'Trial_details.mat'],'ModelTuningParams','ResultsParams')
