@@ -587,3 +587,36 @@ options = trainingOptions('adam',...
   	- C24: foot angle only has x,z; remove shank angle
 
   
+-----
+9. Bayesian Optimisation for hyperparameter tuning:
+
+```
+	Best results:
+		Train RMSE = 1.0186 mm
+		Train R2 = 0.9964 
+		Train Bias = -0.03 mm
+		Train 95CI = [-2.02 mm, 1.97 mm]
+		Validation RMSE = 3.8605 mm
+		Validation R2 = 0.9439 
+		Validation Bias = 0.03 mm
+		Validation 95CI = [-7.53 mm, 7.60 mm]
+
+	Search Space:
+		numHiddenUnits1 = [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures];
+		numHiddenUnits2 = [round(0.25*numFeatures), round(0.5*numFeatures), numFeatures, 2*numFeatures, 4*numFeatures, 8*numFeatures];
+		dropout_rate = [0.10, 0.15, 0.2, 0.25, 0.30];
+		LearningRate = [1e-05, 5e-05, 1e-4, 5e-04, 1e-03, 5e-03, 1e-2];
+		L2Regularization =[1e-5, 1e-04, 1e-3];
+		mini_batch_size = [64, 128, 256];
+
+	Best model:
+		numHiddenUnits1 = [8*numFeatures];
+		numHiddenUnits2 = [8*numFeatures];
+		dropout_rate = [0.10];
+		LearningRate = [1e-2];
+		L2Regularization =[1e-5];
+		mini_batch_size = [256];
+```
+###
+	Convergence figure (Normalised RMSE values):
+<img width="3840" height="1868" alt="OptConvergenceFig" src="https://github.com/user-attachments/assets/182a0e41-fa58-4561-bab4-d99613f5d470" />
