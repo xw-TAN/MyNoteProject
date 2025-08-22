@@ -500,6 +500,18 @@ options = trainingOptions('adam', ...
 |V-Bias /mm	|-0.80|-0.59|-0.81|-0.91|-0.87|-1.23|-0.81|0.09|
 |V-95CI /mm	|[-9.36, 7.77]|[-8.12, 6.95]|[-9.66, 8.05]|[-8.16, 6.34]|[-9.41, 7.66]|[-9.33, 6.87]|[-8.87, 7.25]|[-7.06, 7.25]|
 
+ |Condition|C25|C26|C27| | | | | |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|V-Subject	|0-10%|0-10%|0-10%| | | | | |
+|T-RMSE /mm	|2.2663|1.8518|1.5804| | | | | |
+|T-R2		|0.9820|0.9880|0.9912| | | | | |
+|T-Bias /mm	|0.19|-0.16|-0.06| | | | | |
+|T-95CI /mm	|[-4.23, 4.62]|[-3.78, 3.46]|[-3.15, 3.04]| | | | | |
+|V-RMSE /mm	|3.7925|3.8035|3.3089| | | | | |
+|V-R2		|0.9458|0.9455|0.9588| | | | | |
+|V-Bias /mm	|0.48|0.45|0.46| | | | | |
+|V-95CI /mm	|[-6.89, 7.85]|[-6.95, 7.86]|[-5.97, 6.88]| | | | | |
+
 
 ```matlab
 % the completed inputs
@@ -585,7 +597,10 @@ options = trainingOptions('adam',...
 	- C22: remove grf_thumb
  	- C23: completed inputs
   	- C24: foot angle only has x,z; remove shank angle
-
+    - C25: foot angle only has x,z; remove shank angle; remove grf_heel
+    - C26: foot angle only has x,z; remove shank angle; remove grf_little
+    - C27: foot angle only has x,z; remove shank angle; remove grf_heel and grf_little
+ 
   
 -----
 9. Bayesian Optimisation for hyperparameter tuning:
