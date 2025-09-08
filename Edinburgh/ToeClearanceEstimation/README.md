@@ -113,7 +113,7 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 
 
 
-## to latest
+## to 29-Aug-2025
 1. Adding the edge case data makes the model outcome worse (S1 validation; S2-S10 train and test), as follows:  
 
 	 	Train RMSE = 4.4024 mm  
@@ -635,3 +635,87 @@ options = trainingOptions('adam',...
 ###
 	Convergence figure (Normalised RMSE values):
 <img width="3840" height="1868" alt="OptConvergenceFig" src="https://github.com/user-attachments/assets/182a0e41-fa58-4561-bab4-d99613f5d470" />
+
+
+## to 08-Sep-2025
+Normal Model, etc., model trained using only normal data, didn't show acceptable results on extreme walking patterns. Edge case data were incorporated to address this issue.
+
+1. Since edge case data aren't normal, they were z-score normalized using the mean and std paras calculated from the normal data.
+2. Left and right data of edge cases weren't split to increase the size of available data for training. This change was also made in the Normal Model training process and a boolean variable indicating the body side was also added as one of the model inputs. This change doubled the data size and improved the Normal Model's performance.
+3. Fine tunning was conducted using edge-normal mixed data, since training using only edge cases would cause catastrophic forgetting. The sequence of edge and normal data windows was shuffled before training to avoid biases. [tried to add the shuffle pipeline in the Normal Model training process and found it further improved the model performance, likely due to the enhanced generalizability to the sequence of subjects and conditions.]
+4. Incorporating edge cases would inevitably degrade model performance on normal data. Sufficient edge and normal data may help find a optimal balance, but due to the limited dataset, a manual curriculum learning strategy was adopted to explore a model that has a acceptable performance on both edge and normal case data.  
+   	4.1 Train the Normal Model seven times using datasets with 5%, 10%, 15%, 20%, 25%, 30%, and 35% edge case proportions. Each training was applied to the lastest model from the previous stage and used all the edge case data but the size of normal data was adjusted at each stage to achieve the desired edge-to-normal ratio.  
+    4.2 The above pipeline was shown to considerably improve model performance compared to training once with a dataset containing 20% edge cases. Note that the normal data extracted to generate the mixed dataset at each stage were different. The sequence of edge and normal data windows was shuffled and different across stages.
+
+```matlab
+% fine tunning
+NEpoch_ft = 20;
+LearningRate_ft = 1e-3;
+mini_batch_size_ft = 256;
+
+options = trainingOptions('adam', ...
+    'ValidationData',{x_val, y_val}, ...
+    'ValidationPatience', 8, ...
+    'MiniBatchSize', mini_batch_size_ft, ...
+    'MaxEpochs', NEpoch_ft, ...
+    'InitialLearnRate', LearningRate_ft, ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropPeriod', 4, ...
+    'LearnRateDropFactor', 0.6, ...
+    'GradientThreshold', 1, ...
+    'L2Regularization', 1e-3, ...
+    'Shuffle','every-epoch', ...
+    'Verbose',false, ...
+    'Plots','training-progress', ...
+    'ExecutionEnvironment','auto', ...
+    'OutputNetwork','best-validation-loss');
+
+if ~exist('net', 'var')
+    load("net_base.mat"); % Normal Model
+    layers_ft = net_base.Layers;
+else
+    net_last = net; % model from previous stage
+    layers_ft = net_last.Layers;
+end
+[net, info] = trainNetwork(x_tra, y_tra, layers_ft, options);
+```
+
+|Condition|C1|C2|| | | | | |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|Tra-RMSE /mm	|1.2510|1.3681| | | | | | |
+|Tra-R2			|0.9945|0.9940| | | | | | |
+|Tra-Bias /mm	|0.00|-0.04| | | | | | |
+|Tra-95CI /mm	|[-2.45, 2.46]|[-2.72, 2.64]| | | | | | |
+|Tes-RMSE /mm	|3.0608|1.4264| | | | | | |
+|Tes-R2			|0.9649|0.9935| | | | | | |
+|Tes-Bias /mm	|0.45|-0.04| | | | | | |
+|Tes-95CI /mm	|[-5.48, 6.39]|[-2.83, 2.76]| | | | | | |
+
+	- C1: previous model trained using the optimal architecture and paras and only left or right data
+ 	- C2: model trained using both left and right data and shuffled data windows 
+
+|Condition|C3|C4|C5|C6|C7|C8|C9|C10|
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+|Norm Test-RMSE /mm	|1.3555|1.7794|1.8207|1.8578|1.8334|1.9115|1.8170|1.9770|
+|Norm Test-R2		|0.9942|0.9900|0.9893|0.9890|0.9888|0.9888|0.9888|0.9875|
+|Norm Test-Bias /mm	|-0.05|-0.21|-0.19|-0.19|-0.16|0.10|-0.03|0.13|
+|Norm Test-95CI /mm	|[-2.70, 2.61]|[-3.67, 3.26]|[-3.74, 3.36]|[-3.81, 3.43]|[-3.74, 3.42]|[-3.64, 3.84]|[-3.59, 3.53]|[-3.74, 4.00]|
+|Edge Test-RMSE /mm	|52.9486|9.3420|5.0955|4.7546|3.2379|3.2565|2.6616|2.3984|
+|Edge Test-R2		|0.2795|0.9776|0.9933|0.9947|0.9970|0.9973|0.9978|0.9987|
+|Edge Test-Bias /mm	|-9.24|1.02|-0.19|-0.78|-0.01|-0.42|-0.06|-0.19|
+|Edge Test-95CI /mm	|[-111.43, 92.95]|[-17.19, 19.22]|[-10.17, 9.79]|[-9.97, 8.41]|[-6.36, 6.33]|[-6.75, 5.91]|[-5.27, 5.16]|[-4.87, 4.50]|
+|C2 Test-RMSE /mm	|1.4264|1.8070|1.8555|1.9269|1.9072|1.8803|1.9223|1.9625|
+|C2 Test-R2			|0.9935|0.9895|0.9889|0.9881|0.9883|0.9886|0.9881|0.9876|
+|C2 Test-Bias /mm	|-0.04|-0.19|-0.17|-0.16|-0.14|0.08|-0.03|0.13|
+|C2 Test-95CI /mm	|[-2.83, 2.76]|[-3.71, 3.33]|[-3.79, 3.45]|[-3.92, 3.60]|[-3.87, 3.58]|[-3.60, 3.76]|[-3.80, 3.74]|[-3.71, 3.97]|
+
+	- 'Test' indicates the data used to final test the model performance.
+ 	- 'C2 Test' indicates the test data used in C2 model trial. Note that the size of C2 Test data is much larger than the Norm or Edge Test data, since Norm Test size had to be considerably reduced to achieve the required edge-to-normal ratio as the edge proportion increased. C2 Test data were never used during the fine-tunning process, so they are perfect to evaluate the degradation of model performance after fine-tunning.
+	- C3: model without fine tunning
+ 	- C4: based on the model from C3, fine-tunned with a dataset containing 5% edge cases
+ 	- C5: based on the model from C4, fine-tunned with a dataset containing 10% edge cases
+ 	- C6: based on the model from C5, fine-tunned with a dataset containing 15% edge cases
+ 	- C7: based on the model from C6, fine-tunned with a dataset containing 20% edge cases
+   	- C8: based on the model from C7, fine-tunned with a dataset containing 25% edge cases
+   	- C9: based on the model from C8, fine-tunned with a dataset containing 30% edge cases
+   	- C10: based on the model from C9, fine-tunned with a dataset containing 35% edge cases
