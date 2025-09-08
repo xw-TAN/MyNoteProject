@@ -694,21 +694,35 @@ end
 	- C1: previous model trained using the optimal architecture and paras and only left or right data
  	- C2: model trained using both left and right data and shuffled data windows 
 
-|Condition|C3|C4|C5|C6|C7|C8|C9|C10|
-|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-|Norm Test-RMSE /mm	|1.3555|1.7794|1.8207|1.8578|1.8334|1.9115|1.8170|1.9770|
-|Norm Test-R2		|0.9942|0.9900|0.9893|0.9890|0.9888|0.9888|0.9888|0.9875|
-|Norm Test-Bias /mm	|-0.05|-0.21|-0.19|-0.19|-0.16|0.10|-0.03|0.13|
-|Norm Test-95CI /mm	|[-2.70, 2.61]|[-3.67, 3.26]|[-3.74, 3.36]|[-3.81, 3.43]|[-3.74, 3.42]|[-3.64, 3.84]|[-3.59, 3.53]|[-3.74, 4.00]|
-|Edge Test-RMSE /mm	|52.9486|9.3420|5.0955|4.7546|3.2379|3.2565|2.6616|2.3984|
-|Edge Test-R2		|0.2795|0.9776|0.9933|0.9947|0.9970|0.9973|0.9978|0.9987|
-|Edge Test-Bias /mm	|-9.24|1.02|-0.19|-0.78|-0.01|-0.42|-0.06|-0.19|
-|Edge Test-95CI /mm	|[-111.43, 92.95]|[-17.19, 19.22]|[-10.17, 9.79]|[-9.97, 8.41]|[-6.36, 6.33]|[-6.75, 5.91]|[-5.27, 5.16]|[-4.87, 4.50]|
-|C2 Test-RMSE /mm	|1.4264|1.8070|1.8555|1.9269|1.9072|1.8803|1.9223|1.9625|
-|C2 Test-R2			|0.9935|0.9895|0.9889|0.9881|0.9883|0.9886|0.9881|0.9876|
-|C2 Test-Bias /mm	|-0.04|-0.19|-0.17|-0.16|-0.14|0.08|-0.03|0.13|
-|C2 Test-95CI /mm	|[-2.83, 2.76]|[-3.71, 3.33]|[-3.79, 3.45]|[-3.92, 3.60]|[-3.87, 3.58]|[-3.60, 3.76]|[-3.80, 3.74]|[-3.71, 3.97]|
+|Condition|C3|C4|C5|C6|C7|
+|:---|---:|---:|---:|---:|---:|
+|Norm Test-RMSE /mm	|1.3555|1.7794|1.8207|1.8578|1.8334|
+|Norm Test-R2		|0.9942|0.9900|0.9893|0.9890|0.9888|
+|Norm Test-Bias /mm	|-0.05|-0.21|-0.19|-0.19|-0.16|
+|Norm Test-95CI /mm	|[-2.70, 2.61]|[-3.67, 3.26]|[-3.74, 3.36]|[-3.81, 3.43]|[-3.74, 3.42]|
+|Edge Test-RMSE /mm	|52.9486|9.3420|5.0955|4.7546|3.2379|
+|Edge Test-R2		|0.2795|0.9776|0.9933|0.9947|0.9970|
+|Edge Test-Bias /mm	|-9.24|1.02|-0.19|-0.78|-0.01|
+|Edge Test-95CI /mm	|[-111.43, 92.95]|[-17.19, 19.22]|[-10.17, 9.79]|[-9.97, 8.41]|[-6.36, 6.33]|
+|C2 Test-RMSE /mm	|1.4264|1.8070|1.8555|1.9269|1.9072|
+|C2 Test-R2			|0.9935|0.9895|0.9889|0.9881|0.9883|
+|C2 Test-Bias /mm	|-0.04|-0.19|-0.17|-0.16|-0.14|
+|C2 Test-95CI /mm	|[-2.83, 2.76]|[-3.71, 3.33]|[-3.79, 3.45]|[-3.92, 3.60]|[-3.87, 3.58]|
 
+|Condition|C8|C9|C10|
+|:---|---:|---:|---:|
+|Norm Test-RMSE /mm	|1.9115|1.8170|1.9770|
+|Norm Test-R2		|0.9888|0.9888|0.9875|
+|Norm Test-Bias /mm	|0.10|-0.03|0.13|
+|Norm Test-95CI /mm	|[-3.64, 3.84]|[-3.59, 3.53]|[-3.74, 4.00]|
+|Edge Test-RMSE /mm	|3.2565|2.6616|2.3984|
+|Edge Test-R2		|0.9973|0.9978|0.9987|
+|Edge Test-Bias /mm	|-0.42|-0.06|-0.19|
+|Edge Test-95CI /mm	|[-6.75, 5.91]|[-5.27, 5.16]|[-4.87, 4.50]|
+|C2 Test-RMSE /mm	|1.8803|1.9223|1.9625|
+|C2 Test-R2			|0.9886|0.9881|0.9876|
+|C2 Test-Bias /mm	|0.08|-0.03|0.13|
+|C2 Test-95CI /mm	|[-3.60, 3.76]|[-3.80, 3.74]|[-3.71, 3.97]|
 	- 'Test' indicates the data used to final test the model performance.
  	- 'C2 Test' indicates the test data used in C2 model trial. Note that the size of C2 Test data is much larger than the Norm or Edge Test data, since Norm Test size had to be considerably reduced to achieve the required edge-to-normal ratio as the edge proportion increased. C2 Test data were never used during the fine-tunning process, so they are perfect to evaluate the degradation of model performance after fine-tunning.
 	- C3: model without fine tunning
