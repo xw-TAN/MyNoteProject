@@ -85,6 +85,11 @@ I tried using the `MTP1_Y` value (after subtracting the minimum to avoid negativ
 1. There is a trend that z axis acc value decreased and the y axis acc value increased when the inclination changed from zero to a non-zero value. And from the perspective of IMU itself, it essentially measures acc in the body-frame. If acc in world-frame is request, there must be an in-built algorithm embeded in the IMU sensor to transform the coordinate systems for acc data and this transformation must rely on 3D angles (if it is, the IMU should be able to output 3D angles).  
    **So, I think the acc measurement should be represented in the body-based coordinate system. Thereby, 3D angles are still required as input to the model so as to better estimate toe clearance.**
 
+<p align="center">
+  <img src="./images/Frames.png" width="400"/><br/>
+  <em>Fig. Coordinate systems involved in the lab</em>
+</p>
+
 2. **The IMU 3D orientation angles might have been accurately estimated based on Marker data, as provided in** `calc3DIMUOrientation.m`.
 
 3. Adding the 3D orientation angles considerably improve the model outcome. Moreover, including the data collected with non-zero treadmill inclication also help improves the outcome possibly due to the increased amount of training data. The results are given below:  
@@ -633,7 +638,16 @@ options = trainingOptions('adam',...
 ```
 ###
 	Convergence figure (Normalised RMSE values):
-<img width="3840" height="1868" alt="OptConvergenceFig" src="https://github.com/user-attachments/assets/182a0e41-fa58-4561-bab4-d99613f5d470" />
+<p align="center">
+  <img src="./images/Bayesian_optimization.jpg" width="400"/><br/>
+  <em>Fig. Bayesian optimization to explore the best hyperparameters</em>
+</p>
+
+
+<p align="center">
+  <img src="./images/Estimation_results.jpg" width="300"/><br/>
+  <em>Fig. Toe clearance estimation results using the best hyperparameters and input combination</em>
+</p>
 
 
 ## 29/Aug/2025 - 08/Sep/2025
@@ -732,3 +746,8 @@ end
    	- C8: based on the model from C7, fine-tunned with a dataset containing 25% edge cases
    	- C9: based on the model from C8, fine-tunned with a dataset containing 30% edge cases
    	- C10: based on the model from C9, fine-tunned with a dataset containing 35% edge cases
+
+<p align="center">
+  <img src="./images/Results_on_edge_case.jpg" width="600"/><br/>
+  <em>Fig. Show results of Best normal model and final fine-tuned model on edge cases</em>
+</p>
