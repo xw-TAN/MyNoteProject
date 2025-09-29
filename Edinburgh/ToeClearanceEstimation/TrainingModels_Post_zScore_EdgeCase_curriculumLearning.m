@@ -3,11 +3,13 @@ step_between_points = round(window/10);
 averageMaxWindowDuration = 1.18; % [s]
 
 % to keep consistency [comment these since involving multi-stage training]
-% rng(123, 'threefry'); % for randperm
-% gpurng(123, 'threefry'); % for model training
+rng(123, 'threefry'); % for randperm
+gpurng(123, 'threefry'); % for model training
+
+load("postZscore_withoutTimeNormalization_03_Sep_onlyEdgeCase.mat");
 
 % proportion of edge data
-edgeProportion = 0.35; % note: size ratio of all edge to all normal is 1:100
+edgeProportion = 0.20; % note: size ratio of all edge to all normal is 1:100
 
 % percentage of datasets for different purposes
 percentTra = 0.7;
@@ -162,12 +164,12 @@ x_tes = x_tes(idx_tes);
 y_tes = y_tes(idx_tes);
 
 %% LSTMs
-NEpoch_ft = 20;             % 微调不需要太久
-LearningRate_ft = 1e-3;     % 小10倍，避免毁掉 normal 性能
-mini_batch_size_ft = 256;   % 可以小一点，稳健些
+NEpoch_ft = 20;             % no need to have too many epoch
+LearningRate_ft = 1e-3;     % ten times smaller than that in normal training
+mini_batch_size_ft = 256;
 
 options = trainingOptions('adam', ...
-    'ValidationData',{x_val, y_val}, ... % 用混合集做验证
+    'ValidationData',{x_val, y_val}, ...
     'ValidationPatience', 8, ...
     'MiniBatchSize', mini_batch_size_ft, ...
     'MaxEpochs', NEpoch_ft, ...
@@ -181,10 +183,10 @@ options = trainingOptions('adam', ...
     'Verbose',false, ...
     'Plots','training-progress', ...
     'ExecutionEnvironment','auto', ...
-    'OutputNetwork','best-validation-loss');  % 保留验证最优
+    'OutputNetwork','best-validation-loss');  % retain the best one
 
+load("net_base.mat"); % trained using normal data
 if ~exist('net', 'var')
-    load("net_base.mat"); % trained using normal data
     layers_ft = net_base.Layers;
 else
     net_last = net; % trained from last stage
@@ -207,17 +209,17 @@ y_tes = y_tes(idx_tes_sort);
 % [y_true_netBase_traN, y_pred_netBase_traN] = ...
 %     printIndicator(x_traN, y_traN, allStd_tc, allMean_tc, net_base);
 
-fprintf('\nnet_base normal test dataset:\n');
-[y_true_netBase_tesN, y_pred_netBase_tesN] = ...
-    printIndicator(x_tesN, y_tesN, allStd_tc, allMean_tc, net_base);
+% fprintf('\nnet_base normal test dataset:\n');
+% [y_true_netBase_tesN, y_pred_netBase_tesN] = ...
+%     printIndicator(x_tesN, y_tesN, allStd_tc, allMean_tc, net_base);
 
 % fprintf('\nnet_base edge train dataset:\n');
 % [y_true_netBase_traE, y_pred_netBase_traE] = ...
 %     printIndicator(x_traE, y_traE, allStd_tc, allMean_tc, net_base);
 
-fprintf('\nnet_base edge test dataset:\n');
-[y_true_netBase_tesE, y_pred_netBase_tesE] = ...
-    printIndicator(x_tesE, y_tesE, allStd_tc, allMean_tc, net_base);
+% fprintf('\nnet_base edge test dataset:\n');
+% [y_true_netBase_tesE, y_pred_netBase_tesE] = ...
+%     printIndicator(x_tesE, y_tesE, allStd_tc, allMean_tc, net_base);
 
 % fprintf('\nnet normal train dataset:\n');
 % [y_true_net_traN, y_pred_net_traN] = ...
@@ -238,9 +240,9 @@ fprintf('\nnet edge test dataset:\n');
 
 %% plot figures
 % plotFigures(y_true_netBase_tesN, y_pred_netBase_tesN, window, step_between_points, 'netBase testN dataset');
-plotFigures(y_true_netBase_tesE, y_pred_netBase_tesE, window, step_between_points, 'netBase testE dataset');
+% plotFigures(y_true_netBase_tesE, y_pred_netBase_tesE, window, step_between_points, 'netBase testE dataset');
 % plotFigures(y_true_net_tesN, y_pred_net_tesN, window, step_between_points, 'net testN dataset');
-plotFigures(y_true_net_tesE, y_pred_net_tesE, window, step_between_points, 'net testE dataset');
+% plotFigures(y_true_net_tesE, y_pred_net_tesE, window, step_between_points, 'net testE dataset');
 
 
 %% Functions
@@ -252,7 +254,7 @@ function [xOut, yOut] = dropNaNCells(xIn, yIn)
         if isempty(yi) || isempty(xi)
             emptyIdx(k) = true; continue
         end
-        validIdx = ~any(isnan(yi), 1);
+        validIdx = ~any(isnan(yi),1) & ~any(isnan(xi),1);
         if all(~validIdx)
             emptyIdx(k) = true; continue
         end
