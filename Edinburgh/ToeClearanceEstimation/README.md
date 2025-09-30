@@ -751,3 +751,23 @@ end
   <img src="./images/Results_on_edge_case.jpg" width="600"/><br/>
   <em>Fig. Show results of Best normal model and final fine-tuned model on edge cases</em>
 </p>
+
+
+## 08/Sep/2025 - 29/Sep/2025
+The results reported in **29/Aug/2025 - 08/Sep/2025** may be overestimated due to the following issues: 
+- When calculating the Mean, Standard Deviation, and average-max-window-time-duration, all data including the test dataset were used in both the previous or current pipelines. As a result, the statistics we used for model input normalization already contained information from the test dataset, which means that some characteristics of the test dataset was already exposed to the model and therefore the model performance on test dataset would be overestimated.
+- We first merged data from all subjects across all locomotion conditions into a single dataset, then shuffled and split it into training, validation, and test datasets in proportions of 70%, 20%, 10%. This allowed data from the same subject to be distributed across all three datasets. Consequently, the model may have learned characteristics of this subject in training and validation datasets, leading to overestimated performance on the same subject's data in the test dataset.
+- For the edge model training, the first issue didn't occur here since edge data were excluded from the normalization statistics. But, the all edge-case data were still merged, shuffled, and split in the same way. So the second issue remained here.
+- Therefore, the model we previously considered “optimal” for physical experiments was not actually as strong as suggested by the earlier MATLAB test results. I have now removed all potential test data leakage and re-tested the previously optimal model. The updated results are reported below.
+  	- The results below indicate that the previously considered optimal model was indeed overestimated. However, applying shuffing and bilateral data don't improve results  (LOSO-S10 means that suject #10 was used as the test subject in the LOSO, roughtly corresponding to the last 10% of the complete dataset, similar to the test dataset used in the first two columns). Thus, the two modifications may not be as effective as initially thought. Nevertheless, we got a unified model when adding the two modifications to estimate toe clearance of both feet, which remains its main advantage.
+
+|Condition|Previous optimal|Same condition but without any test leakage|Apply shuffling and bilateral data, LOSO-S10|
+|:---|---:|---:|---:|
+|Tra-RMSE /mm	|1.2510|1.2167|1.3683|
+|Tra-R2			|0.9945|0.9946|0.9938|
+|Tra-Bias /mm	|0.00|-0.03|-0.01|
+|Tra-95CI /mm	|[-2.45, 2.46]|[-2.41, 2.35]|[-2.69, 2.67]|
+|Tes-RMSE /mm	|3.0608|4.0829|3.9166|
+|Tes-R2			|0.9649|0.9598|0.9595|
+|Tes-Bias /mm	|0.45|2.66|2.44|
+|Tes-95CI /mm	|[-5.48, 6.39]|[-3.40, 8.73]|[-3.57, 8.45]|
